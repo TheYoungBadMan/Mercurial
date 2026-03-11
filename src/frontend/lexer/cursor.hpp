@@ -2,11 +2,7 @@
 
 #pragma once
 
-#include "core/types.hpp"
-#include "core/contract.hpp"
-
 #include "frontend/source/source.hpp"
-#include "frontend/source/span.hpp"
 
 #include "predicates.hpp"
 

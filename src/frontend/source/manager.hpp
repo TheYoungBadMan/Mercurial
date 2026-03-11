@@ -2,16 +2,11 @@
 
 #pragma once
 
-#include "core/types.hpp"
-#include "core/contract.hpp"
-
-#include "source/source.hpp"
+#include "source.hpp"
 
 class SourceManager {
 public:
-
-	SourceManager() noexcept = default;
-	~SourceManager() noexcept = default;
+	SourceManager() = default;
 
 	SourceManager(const SourceManager&) = delete;
 	SourceManager& operator=(const SourceManager&) = delete;
@@ -19,30 +14,30 @@ public:
 	SourceManager(SourceManager&&) noexcept = default;
 	SourceManager& operator=(SourceManager&&) noexcept = default;
 
-	[[nodiscard]]
-	SourceId add(String filename, String buffer) {
-		SourceId id = sources.size();
-		sources.emplace_back(std::move(filename), Source{std::move(buffer)});
-		return id;
-	}
-
-	[[nodiscard]]
-	StringView filename(SourceId id) const noexcept {
-		ASSERT(id < sources.size(), "Invalid source ID");
-		return sources[id].first;
-	}
-
-	[[nodiscard]]
-	const Source& source(SourceId id) const noexcept {
-		ASSERT(id < sources.size(), "Invalid source ID");
-		return sources[id].second;
-	}
-
-	[[nodiscard]]
-	Size size() const noexcept {
+	[[nodiscard]] Size size() const noexcept {
 		return sources.size();
 	}
 
+	[[nodiscard]] SourceId add_source(String filename, String buffer) {
+		sources.emplace_back(std::move(filename), Source(std::move(buffer)));
+		return static_cast<SourceId>(sources.size() - 1);
+	}
+
+	[[nodiscard]] StringView filename(SourceId id) const noexcept {
+		ASSERT(id < sources.size(), "Invalid source ID");
+		return sources[id].filename;
+	}
+
+	[[nodiscard]] const Source& source(SourceId id) const noexcept {
+		ASSERT(id < sources.size(), "Invalid source ID");
+		return sources[id].source;
+	}
+
 private:
-	Vector<Pair<String, Source>> sources;
+	struct SourceEntry {
+		String filename;
+		Source source;
+	};
+
+	Vector<SourceEntry> sources;
 };

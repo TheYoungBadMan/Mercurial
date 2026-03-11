@@ -2,19 +2,22 @@
 
 #pragma once
 
-#include "core/types.hpp"
 #include "core/contract.hpp"
+
+#include "span.hpp"
 
 class Source {
 public:
-	explicit Source(String buffer) noexcept : buffer{std::move(buffer)} {}
-	~Source() noexcept = default;
+	explicit Source(String buffer)
+	: buffer{std::move(buffer)} {
+		this->buffer.push_back('\0');
+	}
 
 	Source(const Source&) = delete;
 	Source& operator=(const Source&) = delete;
 
-	Source(Source&&) noexcept = default;
-	Source& operator=(Source&&) noexcept = default;
+	Source(Source&&) = default;
+	Source& operator=(Source&&) = default;
 
 	[[nodiscard]] Char operator[](Size index) const noexcept {
 		ASSERT(index < buffer.size(), "Index out of bounds");
@@ -22,15 +25,20 @@ public:
 	}
 
 	[[nodiscard]] Size size() const noexcept {
-		return buffer.size();
+		return buffer.size() - 1;
 	}
 
 	[[nodiscard]] StringView view() const noexcept {
-		return StringView(buffer);
+		return view(0, size());
 	}
-	
-	[[nodiscard]] StringView view(Size offset, Size length) const noexcept { 
-		return StringView(buffer.data() + offset, length);
+
+	[[nodiscard]] StringView view(Span span) const noexcept {
+		return view(span.start, span.length());
+	}
+
+	[[nodiscard]] StringView view(Size start, Size length) const noexcept {
+		ASSERT(start + length <= size(), "View out of bounds");
+		return StringView(buffer.data() + start, length);
 	}
 
 private:

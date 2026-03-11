@@ -39,9 +39,6 @@ using SourceId = u32;
 using String = std::string;
 using StringView = std::string_view;
 
-template <typename T, typename U>
-using Pair = std::pair<T, U>;
-
 template <typename T>
 using Vector = std::vector<T>;
 

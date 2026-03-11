@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "core/types.hpp"
-
 #include <array>
 #include <algorithm>
 

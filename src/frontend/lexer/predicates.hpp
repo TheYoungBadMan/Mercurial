@@ -6,7 +6,6 @@
 
 #include "core/types.hpp"
 
-
 template<typename Predicate>
 concept CharPredicate = std::is_invocable_v<Predicate, Char> &&
 						std::same_as<std::invoke_result_t<Predicate, Char>, Bool>;

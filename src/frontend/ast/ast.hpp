@@ -1,8 +1,8 @@
+// frontend/ast/ast.hpp
+
 #pragma once
 
-#include "core/types.hpp"
-
-#include "source/span.hpp"
+#include "frontend/source/span.hpp"
 
 struct ASTNode {
 	Span span;

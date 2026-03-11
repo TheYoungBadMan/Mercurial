@@ -2,17 +2,10 @@
 
 #pragma once
 
-#include <format>
-
-#include "core/types.hpp"
-#include "core/contract.hpp"
-
 #include "frontend/token/token.hpp"
-#include "frontend/source/source.hpp"
 
 #include "cursor.hpp"
 #include "keywords.hpp"
-#include "predicates.hpp"
 #include "lexical_error.hpp"
 
 

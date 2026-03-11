@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "core/types.hpp"
-
 #include "frontend/source/span.hpp"
 
 enum class LexicalErrorKind : u8 {
