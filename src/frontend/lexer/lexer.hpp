@@ -15,10 +15,11 @@
 #include "predicates.hpp"
 #include "lexical_error.hpp"
 
+
 struct LexerResult {
 	Vector<Token> tokens;
 	Vector<LexicalError> errors;
-
+	
 	[[nodiscard]] Bool ok() const noexcept {
 		return errors.empty();
 	}
@@ -27,23 +28,24 @@ struct LexerResult {
 class Lexer {
 
 	Cursor cursor;
+	using LexicalResult = Result<Token, LexicalError>;
 
 	Lexer(SourceId source_id, const Source& source) noexcept
 		: cursor{source_id, source} {}
 
 public:
 
-	[[nodiscard]] static LexerResult tokenize(SourceId source_id, const Source& source) {
+	[[nodiscard]] static LexerResult tokenize(SourceId source_id, const Source& source) noexcept {
 		return Lexer{source_id, source}.tokenize();
 	}
 
 private:
-	[[nodiscard]] LexerResult tokenize() {
+	[[nodiscard]] LexerResult tokenize() noexcept {
 		LexerResult result;
 
 		for (;;) {
 			if (!skip()) {
-				result.errors.push_back(make_error("Unterminated block comment"));
+				result.errors.push_back(make_error(LexicalErrorKind::UnterminatedComment));
 				cursor.sync();
 			}
 
@@ -97,7 +99,7 @@ private:
 		return false;
 	}
 
-	[[nodiscard]] LexicalResult extract() {
+	[[nodiscard]] LexicalResult extract() noexcept {
 		if (cursor.match(is_ident_start))
 			return extract_identifier();
 
@@ -117,22 +119,22 @@ private:
 		return make_token(lookup_keyword(lexeme));
 	}
 	
-	[[nodiscard]] LexicalResult extract_number() {
+	[[nodiscard]] LexicalResult extract_number() noexcept {
 		if (cursor.match("0b")) {
 			if (!cursor.match(is_bin_digit))
-				return make_unexpected("Expected binary digit after '0b' prefix");
+				return make_unexpected(LexicalErrorKind::InvalidBinLiteral);
 			return extract_radix_number(is_bin_digit);
 		}
 
 		if (cursor.match("0o")) {
 			if (!cursor.match(is_oct_digit))
-				return make_unexpected("Expected octal digit after '0o' prefix");
+				return make_unexpected(LexicalErrorKind::InvalidOctLiteral);
 			return extract_radix_number(is_oct_digit);
 		}
 
 		if (cursor.match("0x")) {
 			if (!cursor.match(is_hex_digit))
-				return make_unexpected("Expected hexadecimal digit after '0x' prefix");
+				return make_unexpected(LexicalErrorKind::InvalidHexLiteral);
 			return extract_radix_number(is_hex_digit);
 		}
 
@@ -146,7 +148,7 @@ private:
 		return make_token(TokenKind::Integer);
 	}
 
-	[[nodiscard]] LexicalResult extract_decimal_number() {
+	[[nodiscard]] LexicalResult extract_decimal_number() noexcept {
 		// TODO: Handle _ as separator
 		while (cursor.match(is_digit)) {}
 
@@ -165,36 +167,40 @@ private:
 		return make_token(TokenKind::Integer);
 	}
 
-	[[nodiscard]] LexicalResult extract_exponent() {
+	[[nodiscard]] LexicalResult extract_exponent() noexcept {
 		if (cursor.eof())
-			return make_unexpected("Unexpected end of exponent");
+			return make_unexpected(LexicalErrorKind::InvalidExponent);
 
 		if (cursor.match('+') || cursor.match('-')) {}
 
 		if (!cursor.match(is_digit))
-			return make_unexpected("Expected digit in exponent");
+			return make_unexpected(LexicalErrorKind::InvalidExponent);
 
 		while (cursor.match(is_digit)) {}
 
 		return make_token(TokenKind::Float);
 	}
 
-	[[nodiscard]] LexicalResult extract_quote() {
+	[[nodiscard]] LexicalResult extract_quote() noexcept {
 		auto quote = cursor.consume();
 
 		while (!cursor.eof() && !cursor.match(quote)) {
 			if (cursor.match('\\')) {
 				if (cursor.eof())
 					break;
+
+				if (!cursor.match(is_escapable))
+					return make_unexpected(LexicalErrorKind::InvalidEscape);
+			} else {
+				cursor.advance();
 			}
-			cursor.advance();
 		}
 
 		if (cursor.eof()) {
 			if (quote == '"')
-				return make_unexpected("Unterminated string literal");
+				return make_unexpected(LexicalErrorKind::UnterminatedString);
 			else
-				return make_unexpected("Unterminated character literal");
+				return make_unexpected(LexicalErrorKind::UnterminatedChar);
 		}
 
 		if (quote == '"')
@@ -203,7 +209,7 @@ private:
 			return make_token(TokenKind::Character);
 	}
 
-	[[nodiscard]] LexicalResult extract_operator() {
+	[[nodiscard]] LexicalResult extract_operator() noexcept {
 		switch (auto ch = cursor.consume(); ch) {
 			case '+': return make_token(TokenKind::Plus);
 			case '-':
@@ -263,7 +269,7 @@ private:
 			case '[': return make_token(TokenKind::LeftBracket);
 			case ']': return make_token(TokenKind::RightBracket);
 			default:
-				return make_unexpected(std::format("Unexpected character '{}'", ch));
+				return make_unexpected(LexicalErrorKind::UnknownChar);
 		}
 	}
 
@@ -274,15 +280,15 @@ private:
 		};
 	}
 
-	[[nodiscard]] LexicalError make_error(String message) const {
+	[[nodiscard]] LexicalError make_error(LexicalErrorKind kind) const noexcept {
 		return LexicalError{
-			.message = std::move(message),
+			.kind = kind,
 			.span = cursor.span(),
 		};
 	}
 
-	[[nodiscard]] LexicalResult make_unexpected(String message) const {
-		return std::unexpected(make_error(std::move(message)));
+	[[nodiscard]] LexicalResult make_unexpected(LexicalErrorKind kind) const noexcept {
+		return std::unexpected(make_error(kind));
 	}
 };
 
