@@ -1,0 +1,15 @@
+# Build
+build/
+
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Compiler
+*.o
+*.a
+*.so
+*.out
