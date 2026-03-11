@@ -5,11 +5,22 @@
 #include "core/types.hpp"
 
 #include "frontend/source/span.hpp"
-#include "frontend/token/token.hpp"
 
-struct LexicalError {
-	String message;
-	Span span;
+enum class LexicalErrorKind : u8 {
+	UnknownChar,
+	
+	UnterminatedChar,
+	UnterminatedString,
+	UnterminatedComment,
+	
+	InvalidBinLiteral,
+	InvalidOctLiteral,
+	InvalidHexLiteral,
+	InvalidExponent,
+	InvalidEscape,
 };
 
-using LexicalResult = Result<Token, LexicalError>;
+struct LexicalError {
+	LexicalErrorKind kind;
+	Span span;
+};
