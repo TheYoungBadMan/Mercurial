@@ -39,6 +39,15 @@ constexpr Bool is_quote(Char c) noexcept {
 	return c == '"' || c == '\'';
 }
 
+constexpr Bool is_escapable(Char c) noexcept {
+	return c == 'n' ||
+		   c == 't' ||
+		   c == 'r' ||
+		   c == '\\' ||
+		   c == '\'' ||
+		   c == '"';
+}
+
 constexpr Bool is_hex_digit(Char c) noexcept {
 	return is_digit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
 }
