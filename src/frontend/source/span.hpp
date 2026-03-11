@@ -9,7 +9,7 @@ struct Span {
 	Pos start;
 	Pos end;
 
-	[[nodiscard]] constexpr Size size() const noexcept {
-		return static_cast<Size>(end - start);
+	[[nodiscard]] constexpr Size length() const noexcept {
+		return end - start;
 	}
 };
