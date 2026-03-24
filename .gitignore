@@ -4,6 +4,8 @@ build/
 # VSCode
 .vscode/
 
+.CLAUDE.md
+
 # OS
 .DS_Store
 Thumbs.db
