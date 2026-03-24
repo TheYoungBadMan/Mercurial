@@ -2,45 +2,48 @@
 
 #pragma once
 
-#include "ast.hpp"
-
-struct NamedType : TypeNode {
-	using TypeNode::TypeNode;
-};
-
-struct GenericType : TypeNode {
-	TypeList type_args;
-	
-	GenericType(Span span, TypeList type_args) noexcept
-		: TypeNode{span}, type_args{std::move(type_args)} {}
-};
+#include "node.hpp"
 
 struct ArrayType : TypeNode {
-	TypePtr element_type;
+	TypePtr elem;
 	ExprPtr size;
 
-	ArrayType(Span span, TypePtr element_type, ExprPtr size) noexcept
-		: TypeNode{span}, element_type{std::move(element_type)}, size{std::move(size)} {}
+	ArrayType(Span span, TypePtr elem, ExprPtr size) noexcept
+		: TypeNode{span}, elem{std::move(elem)}, size{std::move(size)} {}
+
+	void accept(Visitor& visitor) override;
+};
+
+struct ParenType : TypeNode {
+	TypePtr inner;
+
+	ParenType(Span span, TypePtr inner) noexcept
+		: TypeNode{span}, inner{std::move(inner)} {}
+
+	void accept(Visitor& visitor) override;
 };
 
 struct TupleType : TypeNode {
-	TypeList types;
+	TypeList elems;
 
-	TupleType(Span span, TypeList types) noexcept
-		: TypeNode{span}, types{std::move(types)} {}
-};
+	TupleType(Span span, TypeList elems) noexcept
+		: TypeNode{span}, elems{std::move(elems)} {}
 
-struct VariantType : TypeNode {
-	TypeList types;
-
-	VariantType(Span span, TypeList types) noexcept
-		: TypeNode{span}, types{std::move(types)} {}
+	void accept(Visitor& visitor) override;
 };
 
 struct FunctionType : TypeNode {
-	TypeList param_types;
-	TypePtr return_type;
+	TypeList params;
+	TypePtr ret_type; // optional
 
-	FunctionType(Span span, TypeList param_types, TypePtr return_type) noexcept
-		: TypeNode{span}, param_types{std::move(param_types)}, return_type{std::move(return_type)} {}
+	FunctionType(Span span, TypeList params, TypePtr ret_type = nullptr) noexcept
+		: TypeNode{span}, params{std::move(params)}, ret_type{std::move(ret_type)} {}
+
+	void accept(Visitor& visitor) override;
+};
+
+struct NamedType : TypeNode {
+	using TypeNode::TypeNode;
+
+	void accept(Visitor& visitor) override;
 };

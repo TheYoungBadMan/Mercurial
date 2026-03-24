@@ -2,63 +2,86 @@
 
 #pragma once
 
-#include "ast.hpp"
+#include "node.hpp"
 
 struct VarDecl : DeclNode {
 	BindingList bindings;
 
-	VarDecl(Span span, Visibility visibility, BindingList bindings) noexcept
-		: DeclNode{span, visibility}, bindings{std::move(bindings)} {}
+	explicit VarDecl(Span span, BindingList bindings) noexcept
+		: DeclNode{span},
+		  bindings{std::move(bindings)} {}
 
+	void accept(Visitor& visitor) override;
+};
+
+struct AliasBinding {
+	Span span;
+	Ident name;
+	TypePtr type;
+};
+
+using AliasBindingList = Vector<AliasBinding>;
+
+struct AliasDecl : DeclNode {
+	AliasBindingList bindings;
+
+	AliasDecl(Span span, AliasBindingList bindings) noexcept
+		: DeclNode{span},
+		  bindings{std::move(bindings)} {}
+
+	void accept(Visitor& visitor) override;
+};
+
+using ImportItem = Ident;
+
+using ImportItemList = Vector<ImportItem>;
+
+struct ImportDecl : DeclNode {
+	ImportItemList items;
+
+	ImportDecl(Span span, ImportItemList items) noexcept
+		: DeclNode{span},
+		  items{std::move(items)} {}
+
+	void accept(Visitor& visitor) override;
 };
 
 struct FnDecl : DeclNode {
 	Ident name;
 	BindingList params;
-	TypePtr ret_type = nullptr;
+	TypePtr ret_type; // optional
 	BlockPtr body;
 
-	FnDecl(Span span, Visibility visibility, Ident name, BindingList params, BlockPtr body) noexcept
-		: DeclNode{span, visibility},
-		  name{name},
-		  params{std::move(params)},
-		  body{std::move(body)} {}
-
-	FnDecl(Span span, Visibility visibility, Ident name, BindingList params, TypePtr ret_type, BlockPtr body) noexcept
-		: DeclNode{span, visibility},
+	FnDecl(Span span, Ident name, BindingList params, TypePtr ret_type, BlockPtr body) noexcept
+		: DeclNode{span},
 		  name{name},
 		  params{std::move(params)},
 		  ret_type{std::move(ret_type)},
 		  body{std::move(body)} {}
 
+	void accept(Visitor& visitor) override;
 };
 
 struct RecordDecl : DeclNode {
 	Ident name;
 	BindingList fields;
 
-	RecordDecl(Span span, Visibility visibility, Ident name, BindingList fields) noexcept
-		: DeclNode{span, visibility}, name{name}, fields{std::move(fields)} {}
-};
+	RecordDecl(Span span, Ident name, BindingList fields) noexcept
+		: DeclNode{span},
+		  name{name},
+		  fields{std::move(fields)} {}
 
-struct VariantDecl : DeclNode {
-	// TBD
-
-	using DeclNode::DeclNode;
+	void accept(Visitor& visitor) override;
 };
 
 struct NamespaceDecl : DeclNode {
 	Ident name;
 	DeclList decls;
 
-	NamespaceDecl(Span span, Visibility visibility, Ident name, DeclList decls) noexcept
-		: DeclNode{span, visibility}, name{name}, decls{std::move(decls)} {}
-};
+	NamespaceDecl(Span span, Ident name, DeclList decls) noexcept
+		: DeclNode{span},
+		  name{name},
+		  decls{std::move(decls)} {}
 
-struct AliasDecl : DeclNode {
-	Ident name;
-	TypePtr aliased_type;
-
-	AliasDecl(Span span, Visibility visibility, Ident name, TypePtr aliased_type) noexcept
-		: DeclNode{span, visibility}, name{name}, aliased_type{std::move(aliased_type)} {}
+	void accept(Visitor& visitor) override;
 };

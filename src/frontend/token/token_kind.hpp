@@ -13,26 +13,27 @@ enum class TokenKind : u8 {
 	Boolean, Character, String,
 
 	// Keywords
-	If, Else, Match, While, Loop, Return, Leave, Break, Continue,
-	Pass, Todo, Default, Uninit, Discard,
-	Var, Fn, Record, Variant, Enum, Alias, Namespace, Import,
-	Public, Private,
+	If, Else, While, Loop, Return, Break, Continue,
+	Pass, Todo, Default, Uninit,
+	Var, Fn, Record, Alias, Namespace, Import,
 
 	// Operators
-	Plus, Minus, Star, Slash, Percent,
-	Equal, Less, Greater,
-	Amp, Bar, Caret, Tilde, Bang,
-	EqualEqual, BangEqual, LessEqual, GreaterEqual,
-	AmpAmp, BarBar,
-	LessLess, GreaterGreater,
-	PlusEqual, MinusEqual, StarEqual, SlashEqual, PercentEqual,
-	AmpEqual, BarEqual, CaretEqual, LessLessEqual, GreaterGreaterEqual,
+	Plus, Minus, Star, Slash, Percent, // +, -, *, /, %
+	Equal, Less, Greater, // =, <, >
+	Amp, Bar, Caret, Tilde, Bang, // &, |, ^, ~, !
+
+	EqualEqual, BangEqual, LessEqual, GreaterEqual, // ==, !=, <=, >=
+	LessLess, GreaterGreater, // <<, >>
+	AmpAmp, BarBar, // &&, ||
+	PlusEqual, MinusEqual, StarEqual, SlashEqual, PercentEqual, // +=, -=, *=, /=, %=
+	AmpEqual, BarEqual, CaretEqual, LessLessEqual, GreaterGreaterEqual, // &=, |=, ^=, <<=, >>=
 
 	// Delimiters
-	LeftParen, RightParen,
-	LeftBrace, RightBrace,
-	LeftBracket, RightBracket,
-	Comma, Semicolon, Colon, Dot, Arrow, FatArrow,
+	LeftParen, RightParen, // (, )
+	LeftBrace, RightBrace, // {, }
+	LeftBracket, RightBracket, // [, ]
+	Comma, Semicolon, Colon, Dot, // ,, ;, :, .
+	Arrow, // ->
 
 	// End of file
 	Eof,

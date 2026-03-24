@@ -2,14 +2,64 @@
 
 #pragma once
 
-#include "ast.hpp"
+#include "node.hpp"
 
-struct PassStmt : StmtNode {
-	using StmtNode::StmtNode;
+struct IfStmt : StmtNode {
+	ExprPtr cond;
+	BlockPtr if_block;
+	BlockPtr else_block; // optional
+
+	IfStmt(Span span, ExprPtr cond, BlockPtr if_block, BlockPtr else_block = nullptr) noexcept
+		: StmtNode{span},
+		  cond{std::move(cond)},
+		  if_block{std::move(if_block)},
+		  else_block{std::move(else_block)} {}
+
+	void accept(Visitor& visitor) override;
 };
 
-struct TodoStmt : StmtNode {
+struct WhileStmt : StmtNode {
+	ExprPtr cond;
+	BlockPtr block;
+
+	WhileStmt(Span span, ExprPtr cond, BlockPtr block) noexcept
+		: StmtNode{span},
+		  cond{std::move(cond)},
+		  block{std::move(block)} {}
+
+	void accept(Visitor& visitor) override;
+};
+
+struct LoopStmt : StmtNode {
+	BlockPtr block;
+
+	LoopStmt(Span span, BlockPtr block) noexcept
+		: StmtNode{span},
+		  block{std::move(block)} {}
+
+	void accept(Visitor& visitor) override;
+};
+
+struct BreakStmt : StmtNode {
 	using StmtNode::StmtNode;
+
+	void accept(Visitor& visitor) override;
+};
+
+struct ContinueStmt : StmtNode {
+	using StmtNode::StmtNode;
+
+	void accept(Visitor& visitor) override;
+};
+
+struct ReturnStmt : StmtNode {
+	ExprPtr expr; // optional
+
+	ReturnStmt(Span span, ExprPtr expr = nullptr) noexcept
+		: StmtNode{span},
+		  expr{std::move(expr)} {}
+
+	void accept(Visitor& visitor) override;
 };
 
 enum class AssignOp : u8 {
@@ -32,87 +82,20 @@ struct AssignStmt : StmtNode {
 	ExprPtr rhs;
 
 	AssignStmt(Span span, ExprPtr lhs, AssignOp op, ExprPtr rhs) noexcept
-		: StmtNode{span}, lhs{std::move(lhs)}, op{op}, rhs{std::move(rhs)} {}
+		: StmtNode{span},
+		  lhs{std::move(lhs)},
+		  op{op},
+		  rhs{std::move(rhs)} {}
+
+	void accept(Visitor& visitor) override;
 };
 
 struct ExprStmt : StmtNode {
 	ExprPtr expr;
 
 	ExprStmt(Span span, ExprPtr expr) noexcept
-		: StmtNode{span}, expr{std::move(expr)} {}
-};
-
-struct DeclStmt : StmtNode {
-	DeclPtr decl;
-
-	DeclStmt(Span span, DeclPtr decl) noexcept
-		: StmtNode{span}, decl{std::move(decl)} {}
-};
-
-struct IfStmt : StmtNode {
-	DeclPtr init = nullptr;
-	ExprPtr cond;
-	BlockPtr if_body;
-	BlockPtr else_body = nullptr;
-
-	IfStmt(Span span, ExprPtr cond, BlockPtr if_body, BlockPtr else_body = nullptr) noexcept
 		: StmtNode{span},
-		  cond{std::move(cond)},
-		  if_body{std::move(if_body)},
-		  else_body{std::move(else_body)} {}
+		  expr{std::move(expr)} {}
 
-	IfStmt(Span span, DeclPtr init, ExprPtr cond, BlockPtr if_body, BlockPtr else_body = nullptr) noexcept
-		: StmtNode{span},
-		  init{std::move(init)},
-		  cond{std::move(cond)},
-		  if_body{std::move(if_body)},
-		  else_body{std::move(else_body)} {}
-};
-
-struct LoopStmt : StmtNode {
-	DeclPtr init = nullptr;
-	BlockPtr body;
-
-	LoopStmt(Span span, BlockPtr body) noexcept
-		: StmtNode{span}, body{std::move(body)} {}
-
-	LoopStmt(Span span, DeclPtr init, BlockPtr body) noexcept
-		: StmtNode{span}, init{std::move(init)}, body{std::move(body)} {}
-};
-
-struct WhileStmt : StmtNode {
-	DeclPtr init = nullptr;
-	ExprPtr cond;
-	BlockPtr body;
-
-	WhileStmt(Span span, DeclPtr init, ExprPtr cond, BlockPtr body) noexcept
-		: StmtNode{span},
-		  init{std::move(init)},
-		  cond{std::move(cond)},
-		  body{std::move(body)} {}
-
-	WhileStmt(Span span, ExprPtr cond, BlockPtr body) noexcept
-		: StmtNode{span}, cond{std::move(cond)}, body{std::move(body)} {}
-};
-
-struct ReturnStmt : StmtNode {
-	ExprPtr expr = nullptr;
-
-	ReturnStmt(Span span, ExprPtr expr) noexcept
-		: StmtNode{span}, expr{std::move(expr)} {}
-};
-
-struct LeaveStmt : StmtNode {
-	ExprPtr expr = nullptr;
-
-	LeaveStmt(Span span, ExprPtr expr) noexcept
-		: StmtNode{span}, expr{std::move(expr)} {}
-};
-
-struct BreakStmt : StmtNode {
-	using StmtNode::StmtNode;
-};
-
-struct ContinueStmt : StmtNode {
-	using StmtNode::StmtNode;
+	void accept(Visitor& visitor) override;
 };

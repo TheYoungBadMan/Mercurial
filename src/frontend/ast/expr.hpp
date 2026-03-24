@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "ast.hpp"
+#include "node.hpp"
 
 enum class BinaryOp : u8 {
 	Add, Sub, Mul, Div, Mod,
@@ -13,111 +13,142 @@ enum class BinaryOp : u8 {
 
 struct BinaryExpr : ExprNode {
 	ExprPtr lhs;
-	ExprPtr rhs;
 	BinaryOp op;
+	ExprPtr rhs;
 
-	BinaryExpr(Span span, ExprPtr lhs, ExprPtr rhs, BinaryOp op) noexcept
-		: ExprNode{span}, lhs{std::move(lhs)}, rhs{std::move(rhs)}, op{op} {}
+	BinaryExpr(Span span, ExprPtr lhs, BinaryOp op, ExprPtr rhs) noexcept
+		: ExprNode{span},
+		  lhs{std::move(lhs)},
+		  op{op},
+		  rhs{std::move(rhs)} {}
+
+	void accept(Visitor& visitor) override;
 };
 
 enum class UnaryOp : u8 {
 	Pos, Neg,
-	Not, Inv,
+	Not, BitNot,
 };
 
 struct UnaryExpr : ExprNode {
-	ExprPtr base;
 	UnaryOp op;
+	ExprPtr operand;
 
-	UnaryExpr(Span span, ExprPtr base, UnaryOp op) noexcept
-		: ExprNode{span}, base{std::move(base)}, op{op} {}
+	UnaryExpr(Span span, UnaryOp op, ExprPtr operand) noexcept
+		: ExprNode{span},
+		  op{op},
+		  operand{std::move(operand)} {}
+
+	void accept(Visitor& visitor) override;
 };
 
 struct CallExpr : ExprNode {
-	ExprPtr base;
+	ExprPtr callee;
 	ExprList args;
 
-	CallExpr(Span span, ExprPtr base, ExprList args) noexcept
-		: ExprNode{span}, base{std::move(base)}, args{std::move(args)} {}
+	CallExpr(Span span, ExprPtr callee, ExprList args) noexcept
+		: ExprNode{span},
+		  callee{std::move(callee)},
+		  args{std::move(args)} {}
+
+	void accept(Visitor& visitor) override;
 };
 
 struct SubscriptExpr : ExprNode {
-	ExprPtr base;
+	ExprPtr object;
 	ExprPtr index;
 
-	SubscriptExpr(Span span, ExprPtr base, ExprPtr index) noexcept
-		: ExprNode{span}, base{std::move(base)}, index{std::move(index)} {}
+	SubscriptExpr(Span span, ExprPtr object, ExprPtr index) noexcept
+		: ExprNode{span},
+		  object{std::move(object)}, index{std::move(index)} {}
+
+	void accept(Visitor& visitor) override;
 };
 
 struct MemberExpr : ExprNode {
-	ExprPtr base;
+	ExprPtr object;
 	Ident member;
+	Bool is_index; // false if .name, true if .index
 
-	MemberExpr(Span span, ExprPtr base, Ident member) noexcept
-		: ExprNode{span}, base{std::move(base)}, member{member} {}
-};
+	MemberExpr(Span span, ExprPtr object, Ident member, Bool is_index = false) noexcept
+		: ExprNode{span},
+		  object{std::move(object)}, member{member}, is_index{is_index} {}
 
-struct BlockExpr : ExprNode {
-	BlockPtr block;
-	ExprPtr tail;
-
-	BlockExpr(Span span, BlockPtr block, ExprPtr tail = nullptr) noexcept
-		: ExprNode{span}, block{std::move(block)}, tail{std::move(tail)} {}
+	void accept(Visitor& visitor) override;
 };
 
 struct ParenExpr : ExprNode {
-	ExprPtr base;
+	ExprPtr expr;
 
-	ParenExpr(Span span, ExprPtr base) noexcept
-		: ExprNode{span}, base{std::move(base)} {}
+	ParenExpr(Span span, ExprPtr expr) noexcept
+		: ExprNode{span},
+		  expr{std::move(expr)} {}
+
+	void accept(Visitor& visitor) override;
 };
 
 struct TupleExpr : ExprNode {
-	ExprList elements;
+	ExprList elems;
 
-	TupleExpr(Span span, ExprList elements) noexcept
-		: ExprNode{span}, elements{std::move(elements)} {}
+	TupleExpr(Span span, ExprList elems) noexcept
+		: ExprNode{span},
+		  elems{std::move(elems)} {}
+
+	void accept(Visitor& visitor) override;
 };
 
 struct ArrayExpr : ExprNode {
-	ExprList elements;
+	ExprList elems;
 
-	ArrayExpr(Span span, ExprList elements) noexcept
-		: ExprNode{span}, elements{std::move(elements)} {}
+	ArrayExpr(Span span, ExprList elems) noexcept
+		: ExprNode{span},
+		  elems{std::move(elems)} {}
+
+	void accept(Visitor& visitor) override;
+};
+
+struct IdentExpr : ExprNode {
+	using ExprNode::ExprNode;
+
+	void accept(Visitor& visitor) override;
+};
+
+struct FieldInit {
+	Ident name;
+	ExprPtr value;
+};
+
+struct RecordExpr : ExprNode {
+	Ident name;
+	Vector<FieldInit> fields;
+
+	RecordExpr(Span span, Ident name, Vector<FieldInit> fields) noexcept
+		: ExprNode{span},
+		  name{name}, fields{std::move(fields)} {}
+
+	void accept(Visitor& visitor) override;
 };
 
 struct LambdaExpr : ExprNode {
 	BindingList params;
-	TypePtr ret_type = nullptr;
+	TypePtr ret; // optional
 	BlockPtr body;
 
-	LambdaExpr(Span span, BindingList params, BlockPtr body) noexcept
-		: ExprNode{span}, params{std::move(params)}, body{std::move(body)} {}
-
-	LambdaExpr(Span span, BindingList params, TypePtr ret_type, BlockPtr body) noexcept
+	LambdaExpr(Span span, BindingList params, TypePtr ret, BlockPtr body) noexcept
 		: ExprNode{span},
-		params{std::move(params)},
-		ret_type{std::move(ret_type)},
-		body{std::move(body)} {}
-};
+		  params{std::move(params)},
+		  ret{std::move(ret)},
+		  body{std::move(body)} {}
 
-struct IdentExpr : ExprNode {
-	IdentExpr(Span span) noexcept
-		: ExprNode{span} {}
-};
-
-enum class LiteralKind : u8 {
-	Integer,
-	Float,
-	Bool,
-	Character,
-	String,
-	Unit,
+	void accept(Visitor& visitor) override;
 };
 
 struct LitExpr : ExprNode {
-	LiteralKind kind;
+	Literal kind;
 
-	LitExpr(Span span, LiteralKind kind) noexcept
-		: ExprNode{span}, kind{kind} {}
+	LitExpr(Span span, Literal kind) noexcept
+		: ExprNode{span},
+		  kind{kind} {}
+
+	void accept(Visitor& visitor) override;
 };

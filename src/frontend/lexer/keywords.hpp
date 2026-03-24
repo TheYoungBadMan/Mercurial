@@ -12,43 +12,39 @@ struct DictEntry {
     StringView lexeme;
 };
 
-constexpr auto keywords = [] {
+constexpr auto keywords = [] noexcept {
     auto arr = std::to_array<DictEntry>({
+		// Control flow
 		{TokenKind::If,        "if"},
         {TokenKind::Else,      "else"},
-        {TokenKind::Match,     "match"},
         {TokenKind::While,     "while"},
         {TokenKind::Loop,      "loop"},
         {TokenKind::Return,    "return"},
-        {TokenKind::Leave,     "leave"},
         {TokenKind::Break,     "break"},
         {TokenKind::Continue,  "continue"},
-        {TokenKind::Pass,      "pass"},
-		{TokenKind::Todo,      "todo"},
-        {TokenKind::Default,   "default"},
-        {TokenKind::Uninit,    "uninit"},
-        {TokenKind::Discard,   "discard"},
+		// Declarations
         {TokenKind::Var,       "var"},
         {TokenKind::Fn,        "fn"},
         {TokenKind::Record,    "record"},
-        {TokenKind::Variant,   "variant"},
-        {TokenKind::Enum,      "enum"},
         {TokenKind::Namespace, "namespace"},
         {TokenKind::Alias,     "alias"},
         {TokenKind::Import,    "import"},
-        {TokenKind::Public,    "public"},
-        {TokenKind::Private,   "private"},
 		// Literals
 		{TokenKind::Boolean,      "true"},
 		{TokenKind::Boolean,     "false"},
+        {TokenKind::Pass,      "pass"},
+		{TokenKind::Todo,      "todo"},
+        {TokenKind::Default,   "default"},
 		// Operators
 		{TokenKind::AmpAmp,       "and"},
 		{TokenKind::BarBar,        "or"},
 		{TokenKind::Bang,       "not"},
+		// Special
+        {TokenKind::Uninit,    "uninit"},
     });
 
     std::sort(arr.begin(), arr.end(),
-        [](const DictEntry& a, const DictEntry& b) {
+        [](const DictEntry& a, const DictEntry& b) noexcept {
             return a.lexeme < b.lexeme;
         });
 
@@ -57,7 +53,7 @@ constexpr auto keywords = [] {
 
 [[nodiscard]] inline TokenKind lookup_keyword(StringView lexeme) noexcept {
     auto it = std::lower_bound(keywords.begin(), keywords.end(), lexeme,
-        [](const DictEntry& e, StringView s) {
+        [](const DictEntry& e, StringView s) noexcept {
             return e.lexeme < s;
         });
 

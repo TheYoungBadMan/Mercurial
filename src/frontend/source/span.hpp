@@ -5,7 +5,6 @@
 #include "core/types.hpp"
 
 struct Span {
-	SourceId source_id;
 	Pos start;
 	Pos end;
 

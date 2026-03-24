@@ -1,0 +1,29 @@
+// frontend/ast/pattern.hpp
+
+#pragma once
+
+#include "frontend/ast/node.hpp"
+
+struct NamedPattern : PatternNode {
+	using PatternNode::PatternNode;	
+
+	void accept(Visitor& visitor) override;
+};
+
+struct LiteralPattern : PatternNode {
+	Literal kind;
+
+	LiteralPattern(Span span, Literal kind) noexcept
+		: PatternNode{span}, kind{kind} {}
+
+	void accept(Visitor& visitor) override;
+};
+
+struct TuplePattern : PatternNode {
+	PatternList patterns;
+
+	TuplePattern(Span span, PatternList patterns) noexcept
+		: PatternNode{span}, patterns{std::move(patterns)} {}
+
+	void accept(Visitor& visitor) override;
+};

@@ -6,10 +6,17 @@
 
 #include <string>
 #include <string_view>
+
 #include <vector>
+#include <unordered_map>
+
 #include <memory>
+
+#include <variant>
 #include <optional>
 #include <expected>
+
+// Basic types
 
 using u8 = std::uint8_t;
 using u16 = std::uint16_t;
@@ -31,20 +38,35 @@ using UInt = u64;
 using Int = i64;
 using Float = f64;
 
+// Size types
+
 using Size = u64;
 using Diff = i64;
 using Pos = u32;
 using SourceId = u32;
 
+// String types
+
 using String = std::string;
 using StringView = std::string_view;
+
+// Container types
 
 template <typename T>
 using Vector = std::vector<T>;
 
+template <typename K, typename V>
+using Map = std::unordered_map<K, V>;
+
+// Pointer types
+
 template <typename T>
 using UniquePtr = std::unique_ptr<T>;
 
+// Variant types
+
+template <typename... Ts>
+using Variant = std::variant<Ts...>;
 template <typename T>
 using Option = std::optional<T>;
 template<typename T, typename E>

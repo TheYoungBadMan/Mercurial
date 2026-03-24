@@ -8,81 +8,94 @@
 
 class Cursor {
 public:
-	Cursor(SourceId source_id, const Source& source) noexcept
-		: source_id{source_id}, source{source} {}
-
-	void sync() noexcept {
-		start = cur;
-	}
+	explicit Cursor(const Source& source) noexcept
+		: source{source} {}
 
 	[[nodiscard]] Span span() const noexcept {
 		return Span{
-			.source_id = source_id,
 			.start = start,
-			.end = cur,
+			.end = current,
 		};
 	}
 
 	[[nodiscard]] StringView slice() const noexcept {
-		return source.view(start, cur - start);
+		return source.view(start, current - start);
 	}
 
-	void advance() noexcept {
-		++cur;
-	}
-
-	void advance(Size offset) noexcept {
-		ASSERT(cur + offset <= source.size(), "Advance out of bounds");
-		cur += offset;
-	}
-
-	[[nodiscard]] Char consume() noexcept {
-		return source[cur++];
+	void sync() noexcept {
+		start = current;
 	}
 
 	[[nodiscard]] Char peek() const noexcept {
-		return source[cur];
+		return source[current];
 	}
 
-	[[nodiscard]] Bool eof() const noexcept {
-		return peek() == '\0';
+	void advance(Size offset = 1) noexcept {
+		ASSERT(current + offset <= source.size(), "Advance out of bounds");
+		current += offset;
+	}
+
+	void advance_if(CharPredicate auto predicate) noexcept {
+		if (check(predicate))
+			advance();
+	}
+
+	void advance_while(CharPredicate auto predicate) noexcept {
+		while (check(predicate))
+			advance();
+	}
+
+	void advance_until(CharPredicate auto predicate) noexcept {
+		while (!eof() && !check(predicate))
+			advance();
+	}
+
+	[[nodiscard]] Char consume() noexcept {
+		ASSERT(!eof(), "Consume out of bounds");
+		return source[current++];
 	}
 
 	[[nodiscard]] Bool check(Char expected) const noexcept {
 		return peek() == expected;
 	}
 
-	[[nodiscard]] Bool check(StringView expected) const noexcept {
-		return source.view(cur, expected.size()) == expected;
+	[[nodiscard]] Bool eof() const noexcept {
+		return check('\0');
 	}
 
-	template<CharPredicate Predicate>
-	[[nodiscard]] Bool check(Predicate predicate) const noexcept {
+	[[nodiscard]] Bool check(StringView expected) const noexcept {
+		if (current + expected.size() > source.size())
+			return false;
+		return source.view(current, expected.size()) == expected;
+	}
+
+	[[nodiscard]] Bool check(CharPredicate auto predicate) const noexcept {
 		return predicate(peek());
 	}
 
 	[[nodiscard]] Bool match(Char expected) noexcept {
-		if (!check(expected)) return false;
+		if (!check(expected))
+			return false;
 		advance();
 		return true;
 	}
 
 	[[nodiscard]] Bool match(StringView expected) noexcept {
-		if (!check(expected)) return false;
+		if (!check(expected))
+			return false;
 		advance(expected.size());
 		return true;
 	}
 
-	template <CharPredicate Predicate>
-	[[nodiscard]] Bool match(Predicate predicate) noexcept {
-		if (!check(predicate)) return false;
+	[[nodiscard]] Bool match(CharPredicate auto predicate) noexcept {
+		if (!check(predicate))
+			return false;
 		advance();
 		return true;
 	}
 
 private:
-	SourceId source_id;
 	const Source& source;
 	Pos start = 0;
-	Pos cur = 0;
+	Pos current = 0;
 };

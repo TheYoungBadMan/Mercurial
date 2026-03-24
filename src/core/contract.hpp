@@ -2,16 +2,16 @@
 
 #pragma once
 
+#include <cstdio>
 #include <cstdlib>
-#include <iostream>
+#include <utility>
 
 // --- Internal helper ---
 
 #define FAIL(kind, cond, msg) \
     do { \
-        std::cerr << kind << " failed: (" #cond ")" \
-                  << "\n  message: " << msg \
-                  << "\n  at " << __FILE__ << ":" << __LINE__ << "\n"; \
+        std::fprintf(stderr, "%s failed: (%s)\n  message: %s\n  at %s:%d\n", \
+                     kind, #cond, msg, __FILE__, __LINE__); \
         std::abort(); \
     } while (false)
 
@@ -26,12 +26,15 @@
 #define INVARIANT(cond, msg) \
     do { if (!(cond)) FAIL("INVARIANT", cond, msg); } while (false)
 
-#define UNREACHABLE(msg) \
+#ifdef NDEBUG
+	#define UNREACHABLE(msg) std::unreachable()
+#else
+	#define UNREACHABLE(msg) \
     do { \
-        std::cerr << "UNREACHABLE reached: " << msg \
-                  << "\n  at " << __FILE__ << ":" << __LINE__ << "\n"; \
+        std::fprintf(stderr, "UNREACHABLE reached: %s\n  at %s:%d\n", msg, __FILE__, __LINE__); \
         std::abort(); \
     } while (false)
+#endif
 
 // --- Debug only ---
 
