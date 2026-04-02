@@ -14,6 +14,13 @@ struct DictEntry {
 
 constexpr auto keywords = [] noexcept {
     auto arr = std::to_array<DictEntry>({
+		// Declarations
+        {TokenKind::Var,       "var"},
+        {TokenKind::Alias,     "alias"},
+        {TokenKind::Fn,        "fn"},
+        {TokenKind::Record,    "record"},
+        {TokenKind::Namespace, "namespace"},
+        {TokenKind::Import,    "import"},
 		// Control flow
 		{TokenKind::If,        "if"},
         {TokenKind::Else,      "else"},
@@ -22,38 +29,31 @@ constexpr auto keywords = [] noexcept {
         {TokenKind::Return,    "return"},
         {TokenKind::Break,     "break"},
         {TokenKind::Continue,  "continue"},
-		// Declarations
-        {TokenKind::Var,       "var"},
-        {TokenKind::Fn,        "fn"},
-        {TokenKind::Record,    "record"},
-        {TokenKind::Namespace, "namespace"},
-        {TokenKind::Alias,     "alias"},
-        {TokenKind::Import,    "import"},
+		// Operators
+		{TokenKind::AmpAmp,       "and"},
+		{TokenKind::BarBar,        "or"},
+		{TokenKind::Bang,       "not"},
 		// Literals
 		{TokenKind::Boolean,      "true"},
 		{TokenKind::Boolean,     "false"},
         {TokenKind::Pass,      "pass"},
 		{TokenKind::Todo,      "todo"},
         {TokenKind::Default,   "default"},
-		// Operators
-		{TokenKind::AmpAmp,       "and"},
-		{TokenKind::BarBar,        "or"},
-		{TokenKind::Bang,       "not"},
 		// Special
         {TokenKind::Uninit,    "uninit"},
     });
 
     std::sort(arr.begin(), arr.end(),
-        [](const DictEntry& a, const DictEntry& b) noexcept {
+        [] (const DictEntry& a, const DictEntry& b) noexcept {
             return a.lexeme < b.lexeme;
         });
 
     return arr;
 } ();
 
-[[nodiscard]] inline TokenKind lookup_keyword(StringView lexeme) noexcept {
+[[nodiscard]] constexpr TokenKind lookup_keyword(StringView lexeme) noexcept {
     auto it = std::lower_bound(keywords.begin(), keywords.end(), lexeme,
-        [](const DictEntry& e, StringView s) noexcept {
+        [] (const DictEntry& e, StringView s) noexcept {
             return e.lexeme < s;
         });
 

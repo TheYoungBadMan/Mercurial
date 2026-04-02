@@ -6,13 +6,8 @@
 
 class SourceManager {
 public:
-	SourceManager() noexcept = default;
-
 	SourceManager(const SourceManager&) = delete;
 	SourceManager& operator=(const SourceManager&) = delete;
-
-	SourceManager(SourceManager&&) noexcept = default;
-	SourceManager& operator=(SourceManager&&) noexcept = default;
 
 	[[nodiscard]] Size size() const noexcept {
 		return sources.size();
@@ -33,6 +28,7 @@ public:
 	}
 
 private:
+
 	struct SourceEntry {
 		String filename;
 		Source source;

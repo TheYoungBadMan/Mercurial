@@ -8,6 +8,7 @@
 
 class Cursor {
 public:
+
 	explicit Cursor(const Source& source) noexcept
 		: source{source} {}
 
@@ -95,7 +96,9 @@ public:
 	}
 
 private:
+
 	const Source& source;
 	Pos start = 0;
 	Pos current = 0;
+
 };

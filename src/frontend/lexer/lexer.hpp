@@ -8,13 +8,13 @@
 #include "keywords.hpp"
 #include "lexical_error.hpp"
 
-#define LEXER_ATTEMPT(action) \
+#define LEX_ATTEMPT(action) \
 	do { \
 		if (auto result = action; !result) \
 			return result; \
 	} while (false)
 
-#define LEXER_EXPECT(condition, error_kind) \
+#define LEX_EXPECT(condition, error_kind) \
 	do { \
 		if (!(condition)) \
 			return make_unexpected(error_kind); \
@@ -53,9 +53,7 @@ private:
 	Lexer(const Source& source) noexcept
 		: cursor{source} {}
 
-
 	// -------------------- RESULT --------------------- //
-
 
 	using ExtractResult = Result<Token, LexicalError>;
 	using SkipResult = Result<void, LexicalError>;
@@ -67,15 +65,11 @@ private:
 		};
 	}
 
-	[[nodiscard]] LexicalError make_error(LexicalErrorKind kind) const noexcept {
-		return LexicalError{
+	[[nodiscard]] auto make_unexpected(LexicalErrorKind kind) const noexcept {
+		return std::unexpected(LexicalError{
 			.kind = kind,
 			.span = cursor.span(),
-		};
-	}
-
-	[[nodiscard]] auto make_unexpected(LexicalErrorKind kind) const noexcept {
-		return std::unexpected(make_error(kind));
+		});
 	}
 
 	// -------------------- MAIN LOOP -------------------- //
@@ -111,7 +105,7 @@ private:
 			else if (cursor.match("//"))
 				skip_line_comment();
 			else if (cursor.match("/*"))
-				LEXER_ATTEMPT(skip_block_comment());
+				LEX_ATTEMPT(skip_block_comment());
 			else
 				break;
 		}
@@ -141,7 +135,7 @@ private:
 			}
 		}
 
-		LEXER_EXPECT(depth == 0, LexicalErrorKind::UnterminatedComment);
+		LEX_EXPECT(depth == 0, LexicalErrorKind::UnterminatedComment);
 		return {};
 	}
 
@@ -171,17 +165,17 @@ private:
 	
 	[[nodiscard]] ExtractResult extract_number() noexcept {
 		if (cursor.match("0b")) {
-			LEXER_EXPECT(cursor.match(is_bin_digit), LexicalErrorKind::InvalidBinLiteral);
+			LEX_EXPECT(cursor.match(is_bin_digit), LexicalErrorKind::InvalidBinLiteral);
 			return extract_radix_number(is_bin_digit);
 		}
 
 		if (cursor.match("0o")) {
-			LEXER_EXPECT(cursor.match(is_oct_digit), LexicalErrorKind::InvalidOctLiteral);
+			LEX_EXPECT(cursor.match(is_oct_digit), LexicalErrorKind::InvalidOctLiteral);
 			return extract_radix_number(is_oct_digit);
 		}
 
 		if (cursor.match("0x")) {
-			LEXER_EXPECT(cursor.match(is_hex_digit), LexicalErrorKind::InvalidHexLiteral);
+			LEX_EXPECT(cursor.match(is_hex_digit), LexicalErrorKind::InvalidHexLiteral);
 			return extract_radix_number(is_hex_digit);
 		}
 
@@ -213,9 +207,9 @@ private:
 	}
 
 	[[nodiscard]] ExtractResult extract_exponent() noexcept {
-		LEXER_EXPECT(!cursor.eof(), LexicalErrorKind::InvalidExponent);
+		LEX_EXPECT(!cursor.eof(), LexicalErrorKind::InvalidExponent);
 		cursor.advance_if(is_sign);
-		LEXER_EXPECT(cursor.match(is_digit), LexicalErrorKind::InvalidExponent);
+		LEX_EXPECT(cursor.match(is_digit), LexicalErrorKind::InvalidExponent);
 		cursor.advance_while(is_digit);
 		return make_token(TokenKind::Float);
 	}
@@ -228,13 +222,13 @@ private:
 				if (cursor.eof())
 					break;
 
-				LEXER_EXPECT(cursor.match(is_escapable), LexicalErrorKind::InvalidEscape);
+				LEX_EXPECT(cursor.match(is_escapable), LexicalErrorKind::InvalidEscape);
 			} else {
 				cursor.advance();
 			}
 		}
 
-		LEXER_EXPECT(cursor.match(quote),
+		LEX_EXPECT(cursor.match(quote),
 			quote == '"' ?
 				LexicalErrorKind::UnterminatedString :
 				LexicalErrorKind::UnterminatedChar

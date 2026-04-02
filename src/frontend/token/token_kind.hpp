@@ -13,9 +13,10 @@ enum class TokenKind : u8 {
 	Boolean, Character, String,
 
 	// Keywords
+	Var, Alias, Fn, Record, Namespace, Import,
 	If, Else, While, Loop, Return, Break, Continue,
-	Pass, Todo, Default, Uninit,
-	Var, Fn, Record, Alias, Namespace, Import,
+	Pass, Todo, Default,
+	Uninit,
 
 	// Operators
 	Plus, Minus, Star, Slash, Percent, // +, -, *, /, %

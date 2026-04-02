@@ -4,6 +4,24 @@
 
 #include "node.hpp"
 
+// -------------------- Helpers ---------------------- //
+
+enum class AssignOp : u8 {
+	Assign,     // =
+	AddAssign,  // +=
+	SubAssign,  // -=
+	MulAssign,  // *=
+	DivAssign,  // /=
+	ModAssign,  // %=
+	AndAssign,  // &=
+	OrAssign,   // |=
+	XorAssign,  // ^=
+	ShlAssign,  // <<=
+	ShrAssign,  // >>=
+};
+
+// -------------------- Statements -------------------- //
+
 struct IfStmt : StmtNode {
 	ExprPtr cond;
 	BlockPtr if_block;
@@ -13,7 +31,8 @@ struct IfStmt : StmtNode {
 		: StmtNode{span},
 		  cond{std::move(cond)},
 		  if_block{std::move(if_block)},
-		  else_block{std::move(else_block)} {}
+		  else_block{std::move(else_block)}
+		  {}
 
 	void accept(Visitor& visitor) override;
 };
@@ -25,7 +44,8 @@ struct WhileStmt : StmtNode {
 	WhileStmt(Span span, ExprPtr cond, BlockPtr block) noexcept
 		: StmtNode{span},
 		  cond{std::move(cond)},
-		  block{std::move(block)} {}
+		  block{std::move(block)}
+		  {}
 
 	void accept(Visitor& visitor) override;
 };
@@ -35,7 +55,19 @@ struct LoopStmt : StmtNode {
 
 	LoopStmt(Span span, BlockPtr block) noexcept
 		: StmtNode{span},
-		  block{std::move(block)} {}
+		  block{std::move(block)}
+		  {}
+
+	void accept(Visitor& visitor) override;
+};
+
+struct ReturnStmt : StmtNode {
+	ExprPtr expr; // unit if null
+
+	ReturnStmt(Span span, ExprPtr expr = nullptr) noexcept
+		: StmtNode{span},
+		  expr{std::move(expr)}
+		  {}
 
 	void accept(Visitor& visitor) override;
 };
@@ -52,30 +84,6 @@ struct ContinueStmt : StmtNode {
 	void accept(Visitor& visitor) override;
 };
 
-struct ReturnStmt : StmtNode {
-	ExprPtr expr; // optional
-
-	ReturnStmt(Span span, ExprPtr expr = nullptr) noexcept
-		: StmtNode{span},
-		  expr{std::move(expr)} {}
-
-	void accept(Visitor& visitor) override;
-};
-
-enum class AssignOp : u8 {
-	Assign,     // =
-	AddAssign,  // +=
-	SubAssign,  // -=
-	MulAssign,  // *=
-	DivAssign,  // /=
-	ModAssign,  // %=
-	BitAndAssign, // &=
-	BitOrAssign,  // |=
-	BitXorAssign, // ^=
-	ShlAssign,   // <<=
-	ShrAssign,   // >>=
-};
-
 struct AssignStmt : StmtNode {
 	ExprPtr lhs;
 	AssignOp op;
@@ -85,7 +93,8 @@ struct AssignStmt : StmtNode {
 		: StmtNode{span},
 		  lhs{std::move(lhs)},
 		  op{op},
-		  rhs{std::move(rhs)} {}
+		  rhs{std::move(rhs)}
+		  {}
 
 	void accept(Visitor& visitor) override;
 };
@@ -95,7 +104,8 @@ struct ExprStmt : StmtNode {
 
 	ExprStmt(Span span, ExprPtr expr) noexcept
 		: StmtNode{span},
-		  expr{std::move(expr)} {}
+		  expr{std::move(expr)}
+		  {}
 
 	void accept(Visitor& visitor) override;
 };

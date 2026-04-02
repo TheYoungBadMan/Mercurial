@@ -8,6 +8,7 @@
 
 class Source {
 public:
+
 	explicit Source(String buffer) noexcept
 		: buffer{std::move(buffer)} {}
 
@@ -28,7 +29,7 @@ public:
 
 	[[nodiscard]] StringView view(Size start, Size length) const noexcept {
 		ASSERT(start + length <= size(), "View out of bounds");
-		return StringView(buffer.data() + start, length);
+		return StringView {buffer.data() + start, length};
 	}
 
 	[[nodiscard]] StringView view(Span span) const noexcept {

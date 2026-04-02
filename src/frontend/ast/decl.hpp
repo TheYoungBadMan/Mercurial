@@ -4,44 +4,38 @@
 
 #include "node.hpp"
 
-struct VarDecl : DeclNode {
-	BindingList bindings;
-
-	explicit VarDecl(Span span, BindingList bindings) noexcept
-		: DeclNode{span},
-		  bindings{std::move(bindings)} {}
-
-	void accept(Visitor& visitor) override;
-};
+// -------------------- Helpers ----------------------- //
 
 struct AliasBinding {
 	Span span;
 	Ident name;
 	TypePtr type;
 };
-
 using AliasBindingList = Vector<AliasBinding>;
+
+using ImportItem = Ident;
+using ImportItemList = Vector<ImportItem>;
+
+// -------------------- Declarations -------------------- //
+
+struct VarDecl : DeclNode {
+	BindingList bindings;
+
+	VarDecl(Span span, BindingList bindings) noexcept
+		: DeclNode{span},
+		  bindings{std::move(bindings)}
+		  {}
+
+	void accept(Visitor& visitor) override;
+};
 
 struct AliasDecl : DeclNode {
 	AliasBindingList bindings;
 
 	AliasDecl(Span span, AliasBindingList bindings) noexcept
 		: DeclNode{span},
-		  bindings{std::move(bindings)} {}
-
-	void accept(Visitor& visitor) override;
-};
-
-using ImportItem = Ident;
-
-using ImportItemList = Vector<ImportItem>;
-
-struct ImportDecl : DeclNode {
-	ImportItemList items;
-
-	ImportDecl(Span span, ImportItemList items) noexcept
-		: DeclNode{span},
-		  items{std::move(items)} {}
+		  bindings{std::move(bindings)}
+		  {}
 
 	void accept(Visitor& visitor) override;
 };
@@ -49,7 +43,7 @@ struct ImportDecl : DeclNode {
 struct FnDecl : DeclNode {
 	Ident name;
 	BindingList params;
-	TypePtr ret_type; // optional
+	TypePtr ret_type; // auto if null
 	BlockPtr body;
 
 	FnDecl(Span span, Ident name, BindingList params, TypePtr ret_type, BlockPtr body) noexcept
@@ -57,7 +51,8 @@ struct FnDecl : DeclNode {
 		  name{name},
 		  params{std::move(params)},
 		  ret_type{std::move(ret_type)},
-		  body{std::move(body)} {}
+		  body{std::move(body)}
+		  {}
 
 	void accept(Visitor& visitor) override;
 };
@@ -69,7 +64,8 @@ struct RecordDecl : DeclNode {
 	RecordDecl(Span span, Ident name, BindingList fields) noexcept
 		: DeclNode{span},
 		  name{name},
-		  fields{std::move(fields)} {}
+		  fields{std::move(fields)}
+		  {}
 
 	void accept(Visitor& visitor) override;
 };
@@ -81,7 +77,19 @@ struct NamespaceDecl : DeclNode {
 	NamespaceDecl(Span span, Ident name, DeclList decls) noexcept
 		: DeclNode{span},
 		  name{name},
-		  decls{std::move(decls)} {}
+		  decls{std::move(decls)}
+		  {}
+
+	void accept(Visitor& visitor) override;
+};
+
+struct ImportDecl : DeclNode {
+	ImportItemList items;
+
+	ImportDecl(Span span, ImportItemList items) noexcept
+		: DeclNode{span},
+		  items{std::move(items)}
+		  {}
 
 	void accept(Visitor& visitor) override;
 };

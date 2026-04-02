@@ -4,30 +4,41 @@
 
 #include "frontend/source/span.hpp"
 
-// -------------------- FORWARD DECLARATIONS -------------------- //
+// --------------------- Nodes --------------------- //
 
-struct Node;
-struct PatternNode;
-struct TypeNode;
-struct DeclNode;
-struct StmtNode;
-struct ExprNode;
+class Visitor;
 
-// -------------------- TYPE ALIASES -------------------- //
+struct Node {
+	Span span;
 
-using PatternPtr = UniquePtr<PatternNode>;
-using TypePtr = UniquePtr<TypeNode>;
+	explicit Node(Span span) noexcept
+		: span{span} {}
+
+	virtual ~Node() noexcept = default;
+	virtual void accept(Visitor& visitor) = 0;
+};
+
+struct DeclNode : Node { using Node::Node; };
+struct StmtNode : Node { using Node::Node; };
+struct ExprNode : Node { using Node::Node; };
+struct TypeNode : Node { using Node::Node; };
+struct PatternNode : Node { using Node::Node; };
+
+// -------------------- Node aliases -------------------- //
+
 using DeclPtr = UniquePtr<DeclNode>;
 using StmtPtr = UniquePtr<StmtNode>;
 using ExprPtr = UniquePtr<ExprNode>;
+using TypePtr = UniquePtr<TypeNode>;
+using PatternPtr = UniquePtr<PatternNode>;
 
-using PatternList = Vector<PatternPtr>;
-using TypeList = Vector<TypePtr>;
 using DeclList = Vector<DeclPtr>;
 using StmtList = Vector<StmtPtr>;
 using ExprList = Vector<ExprPtr>;
+using TypeList = Vector<TypePtr>;
+using PatternList = Vector<PatternPtr>;
 
-// -------------------- HELPER TYPES -------------------- //
+// -------------------- Helpers -------------------- //
 
 using Ident = Span;
 
@@ -42,42 +53,20 @@ enum class Literal : u8 {
 	Default,
 };
 
-using Module = DeclList;
-
-using BlockItem = Variant<DeclPtr, StmtPtr>;
-
-struct Block {
-	Span span;
-	Vector<BlockItem> items;
-};
-
-using BlockPtr = UniquePtr<Block>;
-
 struct Binding {
 	Span span;
 	PatternPtr pattern;
 	TypePtr type;
 	ExprPtr init = nullptr; // optional
 };
-
 using BindingList = Vector<Binding>;
 
-// -------------------- NODES -------------------- //
-
-class Visitor;
-
-struct Node {
+using BlockItem = Variant<DeclPtr, StmtPtr>;
+using BlockItemList = Vector<BlockItem>;
+struct Block {
 	Span span;
-
-	explicit Node(Span span) noexcept
-		: span{span} {}
-
-	virtual ~Node() noexcept = default;
-	virtual void accept(Visitor& visitor) = 0;
+	BlockItemList items;
 };
+using BlockPtr = UniquePtr<Block>;
 
-struct PatternNode : Node { using Node::Node; };
-struct TypeNode : Node { using Node::Node; };
-struct DeclNode : Node { using Node::Node; };
-struct StmtNode : Node { using Node::Node; };
-struct ExprNode : Node { using Node::Node; };
+using Module = DeclList;

@@ -123,18 +123,32 @@ module ::= decl* EOF
 ### Block
 
 ```ebnf
-block ::= '{' block-item* '}'
-block-item ::= stmt | block-decl
+block ::= '{' block-item-list? '}'
+block-item-list ::= block-item (block-item)*
+block-item ::= block-decl | stmt
+```
+
+### Bindings
+
+```ebnf
+binding ::= pattern ':' type ('=' init-expr)? |
+			pattern '=' init-expr
+
+
+init-expr ::= expr | 'uninit'
+
+trailing-binding-list ::=  binding-list ','?
+binding-list ::= binding (',' binding)*
 ```
 
 ### Declarations
 
 ```ebnf
-decl ::= block-decl  |
-		 import-decl |
-		 fn-decl     |
-		 record-decl |
-		 namespace-decl
+decl ::= block-decl		|
+		 fn-decl		|
+		 record-decl	|
+		 namespace-decl	|
+		 import-decl
 
 block-decl ::= var-decl | alias-decl
 
@@ -144,15 +158,15 @@ alias-decl ::= 'alias' alias-binding-list ';'
 alias-binding-list ::= alias-binding (',' alias-binding)*
 alias-binding ::= identifier '=' type
 
-import-decl ::= 'import' import-item-list ';'
-import-item-list ::= import-item (',' import-item)*
-import-item ::= identifier
-
 fn-decl ::= 'fn' identifier '(' trailing-binding-list? ')' ('->' type)? block
 
 record-decl ::= 'record' identifier '{' trailing-binding-list? '}'
 
 namespace-decl ::= 'namespace' identifier '{' decl* '}'
+
+import-decl ::= 'import' import-item-list ';'
+import-item-list ::= import-item (',' import-item)*
+import-item ::= identifier
 ```
 
 ### Statements
@@ -164,7 +178,7 @@ stmt ::= if-stmt       |
 		 return-stmt   |
 		 break-stmt    |
 		 continue-stmt |
-		 expr-stmt
+		 expr-or-assignment-stmt
 
 if-stmt ::= if-clause else-clause?
 if-clause ::= 'if' '(' expr ')' block
@@ -180,7 +194,7 @@ break-stmt ::= 'break' ';'
 
 continue-stmt ::= 'continue' ';'
 
-expr-stmt ::= (expr | assignment) ';'
+expr-or-assignment-stmt ::= (expr | assignment) ';'
 
 assignment ::= expr assign-op expr
 assign-op ::= '=' | '+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=' | '<<=' | '>>='
@@ -212,25 +226,25 @@ call-suffix ::= '(' expr-list? ')'
 subscript-suffix ::= '[' expr ']'
 member-suffix ::= '.' (identifier | decimal-integer)
 
-primary-expr ::= paren-expr   |
-				 array-expr   |
-				 lambda-expr  |
-				 ident-expr   |
+primary-expr ::= lambda-expr 		  |
+				 array-expr			  |
+				 paren-or-tuple-expr  |
+				 ident-or-record-expr |
 				 literal-expr
-		
-paren-expr ::= unit-literal | group-expr | tuple-expr
+
+lambda-expr ::= 'fn' '(' trailing-binding-list? ')' ('->' type)? block
+
+array-expr ::= '[' expr-list? ']'
+
+paren-or-tuple-expr ::= unit-literal | group-expr | tuple-expr
 unit-literal ::= '(' ')'
 group-expr ::= '(' expr ')'
 tuple-expr ::= '(' expr ',' expr-list? ')'
 
-array-expr ::= '[' expr-list? ']'
-
-ident-expr ::= identifier | record-expr
+ident-or-record-expr ::= identifier | record-expr
 record-expr ::= identifier '{' field-init-list? '}'
 field-init-list ::= field-init (',' field-init)* ','?
 field-init ::= identifier '=' expr
-
-lambda-expr ::= 'fn' '(' trailing-binding-list? ')' ('->' type)? block
 
 literal-expr ::= literal | literal-keyword
 
@@ -243,13 +257,13 @@ expr-list ::= expr (',' expr)* ','?
 type ::= primary-type (type-suffix)?
 type-suffix ::= '[' expr ']'
 
-primary-type ::= paren-type |
-				 fn-type    |
+primary-type ::= fn-type			 |
+				 paren-or-tuple-type |
 				 identifier
 
-paren-type ::= unit-type | group-type | tuple-type
+paren-or-tuple-type ::= unit-type | paren-type | tuple-type
 unit-type ::= '(' ')'
-group-type ::= '(' type ')'
+paren-type ::= '(' type ')'
 tuple-type ::= '(' type ',' type-list? ')'
 
 fn-type ::= 'fn' '(' type-list? ')' ('->' type)?
@@ -267,17 +281,4 @@ group-pattern ::= '(' pattern ')'
 list-pattern ::= '(' pattern ',' pattern-list? ')'
 
 pattern-list ::= pattern (',' pattern)* ','?
-```
-
-### Bindings
-
-```ebnf
-binding ::= pattern ':' type ('=' init-expr)? |
-			pattern '=' init-expr
-
-
-init-expr ::= expr | 'uninit'
-
-trailing-binding-list ::=  binding-list ','?
-binding-list ::= binding (',' binding)*
 ```
