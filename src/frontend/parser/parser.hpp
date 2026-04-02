@@ -111,7 +111,7 @@ private:
 		constexpr auto ctx = Context::Binding;
 		auto start = stream.start();
 
-		auto name = CONSUME(Identifier);
+		auto pattern = PARSE_ATTEMPT(parse_pattern());
 		EXPECT(Colon);
 		auto type = PARSE_ATTEMPT(parse_type());
 
@@ -121,13 +121,17 @@ private:
 
 		return Binding {
 			.span = stream.span_from(start),
-			.name = name.span,
+			.pattern = std::move(pattern),
 			.type = std::move(type),
 			.init = std::move(init)
 		};
 	}
 
 	// -------------------- Node parsing --------------------- //
+
+	ParseResult<PatternPtr> parse_pattern();
+	ParseResult<PatternPtr> parse_paren_pattern();
+	ParseResult<PatternPtr> parse_named_pattern();
 
 	ParseResult<TypePtr> parse_type();
 	ParseResult<TypePtr> parse_postfix_type();
@@ -148,9 +152,9 @@ private:
 	ParseResult<StmtPtr> parse_if_stmt();
 	ParseResult<StmtPtr> parse_while_stmt();
 	ParseResult<StmtPtr> parse_loop_stmt();
+	ParseResult<StmtPtr> parse_return_stmt();
 	ParseResult<StmtPtr> parse_break_stmt();
 	ParseResult<StmtPtr> parse_continue_stmt();
-	ParseResult<StmtPtr> parse_return_stmt();
 	ParseResult<StmtPtr> parse_expr_stmt();
 
 	ParseResult<ExprPtr> parse_expr();

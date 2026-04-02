@@ -111,13 +111,14 @@ Parser::ParseResult<ExprPtr> Parser::parse_postfix_expr() {
 		if (stream.match(LeftParen)) {
 			constexpr auto ctx = Context::CallExpr;
 			ExprList args;
-			if (!stream.check(RightParen)) {
+			if (!stream.match(RightParen)) {
 				do {
 					auto arg = PARSE_ATTEMPT(parse_expr());
 					args.push_back(std::move(arg));
 				} while (stream.match(Comma) && !stream.check(RightParen));
+				EXPECT(RightParen);
 			}
-			EXPECT(RightParen);
+			
 			expr = std::make_unique<CallExpr>(
 				stream.span_from(start),
 				std::move(expr),
@@ -200,10 +201,7 @@ Parser::ParseResult<ExprPtr> Parser::parse_paren_expr() {
 	stream.advance(); // consume '('
 
 	if (stream.match(RightParen))
-		return std::make_unique<LitExpr>(
-			stream.span_from(start),
-			Literal::Unit
-		); // unit literal
+		return std::make_unique<ParenExpr>(stream.span_from(start)); // unit literal `()`
 
 	auto first_expr = PARSE_ATTEMPT(parse_expr());
 
@@ -216,12 +214,14 @@ Parser::ParseResult<ExprPtr> Parser::parse_paren_expr() {
 	EXPECT(Comma);
 
 	ExprList elements = {std::move(first_expr)};
-	do {
-		auto element = PARSE_ATTEMPT(parse_expr());
-		elements.push_back(std::move(element));
-	} while (stream.match(Comma) && !stream.check(RightParen));
 
-	EXPECT(RightParen);
+	if (!stream.match(RightParen)) {
+		do {
+			auto element = PARSE_ATTEMPT(parse_expr());
+			elements.push_back(std::move(element));
+		} while (stream.match(Comma) && !stream.check(RightParen));
+		EXPECT(RightParen);
+	}
 
 	return std::make_unique<TupleExpr>(
 		stream.span_from(start),
@@ -237,14 +237,14 @@ Parser::ParseResult<ExprPtr> Parser::parse_array_expr() {
 	stream.advance(); // consume '['
 	
 	ExprList elements;
-	if (!stream.check(RightBracket)) {
+	if (!stream.match(RightBracket)) {
 		do {
 			auto element = PARSE_ATTEMPT(parse_expr());
 			elements.push_back(std::move(element));
 		} while (stream.match(Comma) && !stream.check(RightBracket));
+		EXPECT(RightBracket);
 	}
 
-	EXPECT(RightBracket);
 
 	return std::make_unique<ArrayExpr>(
 		stream.span_from(start),
@@ -299,14 +299,13 @@ Parser::ParseResult<ExprPtr> Parser::parse_lambda_expr() {
 	EXPECT(LeftParen);
 
 	BindingList params;
-	if (!stream.check(RightParen)) {
+	if (!stream.match(RightParen)) {
 		do {
 			auto param = PARSE_ATTEMPT(parse_binding());
 			params.push_back(std::move(param));
 		} while (stream.match(Comma) && !stream.check(RightParen));
+		EXPECT(RightParen);
 	}
-
-	EXPECT(RightParen);
 
 	TypePtr return_type = nullptr;
 	if (stream.match(Arrow))

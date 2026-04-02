@@ -15,9 +15,9 @@ struct ArrayType : TypeNode {
 };
 
 struct ParenType : TypeNode {
-	TypePtr inner;
+	TypePtr inner; // optional, if null then it's a unit type `()`
 
-	ParenType(Span span, TypePtr inner) noexcept
+	ParenType(Span span, TypePtr inner = nullptr) noexcept
 		: TypeNode{span}, inner{std::move(inner)} {}
 
 	void accept(Visitor& visitor) override;

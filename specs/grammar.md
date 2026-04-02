@@ -46,18 +46,18 @@ ident-continue ::= LETTER | DIGIT | UNDERSCORE
 ### Keywords
 
 ```ebnf
-keyword ::= stmt-keyword | decl-keyword | literal-keyword | special-keyword | operator-keyword
+keyword ::= stmt-keyword | decl-keyword | literal-keyword | operator-keyword | special-keyword
 
 stmt-keyword ::= 'if' | 'else' | 'while' | 'loop' |
-				'break' | 'continue' | 'return'
+				'return' | 'break' | 'continue'
 
-decl-keyword ::= 'var' | 'alias' | 'fn' | 'record' | 'namespace' | 'import'
+decl-keyword ::= 'var' | 'alias' | 'import' | 'fn' | 'record' | 'namespace'
 
 literal-keyword ::= 'true' | 'false' | 'pass' | 'todo' | 'default'
 
-special-keyword ::= 'uninit'
-
 operator-keyword ::= 'and' | 'or' | 'not'
+
+special-keyword ::= 'uninit'
 ```
 
 ### Literals
@@ -123,35 +123,36 @@ module ::= decl* EOF
 ### Block
 
 ```ebnf
-block ::= '{' (stmt | block-decl)+ '}'
+block ::= '{' block-item* '}'
+block-item ::= stmt | block-decl
 ```
 
 ### Declarations
 
 ```ebnf
-decl ::= block-decl     |
-				fn-decl        |
-				record-decl    |
-				namespace-decl |
-				import-decl
+decl ::= block-decl  |
+		 import-decl |
+		 fn-decl     |
+		 record-decl |
+		 namespace-decl
 
 block-decl ::= var-decl | alias-decl
 
 var-decl ::= 'var' binding-list ';'
 
-alias-decl ::= 'alias' alias-list ';'
-alias-list ::= alias-item (',' alias-item)*
-alias-item ::= identifier '=' type
+alias-decl ::= 'alias' alias-binding-list ';'
+alias-binding-list ::= alias-binding (',' alias-binding)*
+alias-binding ::= identifier '=' type
+
+import-decl ::= 'import' import-item-list ';'
+import-item-list ::= import-item (',' import-item)*
+import-item ::= identifier
 
 fn-decl ::= 'fn' identifier '(' trailing-binding-list? ')' ('->' type)? block
 
 record-decl ::= 'record' identifier '{' trailing-binding-list? '}'
 
 namespace-decl ::= 'namespace' identifier '{' decl* '}'
-
-import-decl ::= 'import' import-list ';'
-import-list ::= import-item (',' import-item)*
-import-item ::= identifier
 ```
 
 ### Statements
@@ -160,10 +161,9 @@ import-item ::= identifier
 stmt ::= if-stmt       |
 		 while-stmt    |
 		 loop-stmt     |
+		 return-stmt   |
 		 break-stmt    |
 		 continue-stmt |
-		 return-stmt   |
-		 decl-stmt     |
 		 expr-stmt
 
 if-stmt ::= if-clause else-clause?
@@ -174,13 +174,11 @@ while-stmt ::= 'while' '(' expr ')' block
 
 loop-stmt ::= 'loop' block
 
+return-stmt ::= 'return' expr? ';'
+
 break-stmt ::= 'break' ';'
 
 continue-stmt ::= 'continue' ';'
-
-return-stmt ::= 'return' expr? ';'
-
-decl-stmt ::= block-decl
 
 expr-stmt ::= (expr | assignment) ';'
 
@@ -194,9 +192,13 @@ assign-op ::= '=' | '+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=' | '<<=
 expr ::= binary-expr
 
 binary-expr ::= unary-expr (binary-op unary-expr)*
-binary-op ::= '||' | '&&' |
-			  '==' | '!=' | '<' | '>' | '<=' | '>=' |
-			  '|' | '^' | '&' |
+binary-op ::= '||' |
+			  '&&' |
+			  '==' | '!=' |
+			  '<' | '>' | '<=' | '>=' |
+			  '|' |
+			  '^' |
+			  '&' |
 			  '<<' | '>>' |
 			  '+' | '-' |
 			  '*' | '/' | '%'
@@ -216,8 +218,8 @@ primary-expr ::= paren-expr   |
 				 ident-expr   |
 				 literal-expr
 		
-paren-expr ::= unit-expr | group-expr | tuple-expr
-unit-expr ::= '(' ')'
+paren-expr ::= unit-literal | group-expr | tuple-expr
+unit-literal ::= '(' ')'
 group-expr ::= '(' expr ')'
 tuple-expr ::= '(' expr ',' expr-list? ')'
 
@@ -245,22 +247,34 @@ primary-type ::= paren-type |
 				 fn-type    |
 				 identifier
 
-paren-type ::= group-type | tuple-type
+paren-type ::= unit-type | group-type | tuple-type
+unit-type ::= '(' ')'
 group-type ::= '(' type ')'
-tuple-type ::= '(' type (',' type)+ ','? ')'
+tuple-type ::= '(' type ',' type-list? ')'
 
 fn-type ::= 'fn' '(' type-list? ')' ('->' type)?
 
 type-list ::= type (',' type)* ','?
 ```
 
+### Patterns
+
+```ebnf
+pattern ::= named-pattern | paren-pattern
+named-pattern ::= identifier
+paren-pattern ::= group-pattern | list-pattern
+group-pattern ::= '(' pattern ')'
+list-pattern ::= '(' pattern ',' pattern-list? ')'
+
+pattern-list ::= pattern (',' pattern)* ','?
+```
+
 ### Bindings
 
 ```ebnf
-binding ::= binding-target ':' type ('=' init-expr)? |
-			binding-target '=' init-expr
+binding ::= pattern ':' type ('=' init-expr)? |
+			pattern '=' init-expr
 
-binding-target ::= identifier
 
 init-expr ::= expr | 'uninit'
 

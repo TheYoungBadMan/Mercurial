@@ -37,7 +37,6 @@ enum class Literal : u8 {
 	Boolean,
 	Character,
 	String,
-	Unit,
 	Pass,
 	Todo,
 	Default,

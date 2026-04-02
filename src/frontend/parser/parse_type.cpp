@@ -47,6 +47,10 @@ Parser::ParseResult<TypePtr> Parser::parse_paren_type() {
 
 	ASSERT(stream.check(LeftParen), "Expected '(' token");
 	stream.advance(); // consume '('
+
+	if (stream.match(RightParen))
+		return std::make_unique<ParenType>(stream.span_from(start));
+
 	auto type = PARSE_ATTEMPT(parse_type());
 
 	if (stream.match(RightParen))
@@ -59,12 +63,13 @@ Parser::ParseResult<TypePtr> Parser::parse_paren_type() {
 
 	TypeList element_types{std::move(type)};
 
-	do {
-		auto type = PARSE_ATTEMPT(parse_type());
-		element_types.push_back(std::move(type));
-	} while (stream.match(Comma) && !stream.check(RightParen));
-
-	EXPECT(RightParen);
+	if (!stream.match(RightParen)) {
+		do {
+			auto type = PARSE_ATTEMPT(parse_type());
+			element_types.push_back(std::move(type));
+		} while (stream.match(Comma) && !stream.check(RightParen));
+		EXPECT(RightParen);
+	}
 
 	return std::make_unique<TupleType>(
 		stream.span_from(start),
@@ -81,14 +86,14 @@ Parser::ParseResult<TypePtr> Parser::parse_function_type() {
 	EXPECT(LeftParen);
 
 	TypeList param_types;
-	if (!stream.check(RightParen)) {
+	if (!stream.match(RightParen)) {
 		do {
 			auto type = PARSE_ATTEMPT(parse_type());
 			param_types.push_back(std::move(type));
 		} while (stream.match(Comma) && !stream.check(RightParen));
+		EXPECT(RightParen);
 	}
 
-	EXPECT(RightParen);
 
 	TypePtr return_type = nullptr;
 	if (stream.match(Arrow))

@@ -78,9 +78,9 @@ struct MemberExpr : ExprNode {
 };
 
 struct ParenExpr : ExprNode {
-	ExprPtr expr;
+	ExprPtr expr; // optional, if null then it's a unit literal `()`
 
-	ParenExpr(Span span, ExprPtr expr) noexcept
+	ParenExpr(Span span, ExprPtr expr = nullptr) noexcept
 		: ExprNode{span},
 		  expr{std::move(expr)} {}
 
