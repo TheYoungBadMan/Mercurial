@@ -80,32 +80,6 @@ Parser::ParseResult<DeclPtr> Parser::parse_alias_decl() {
 	);
 }
 
-Parser::ParseResult<DeclPtr> Parser::parse_import_decl() {
-	constexpr auto ctx = Context::ImportDecl;
-	auto start = stream.start();
-
-	ASSERT(stream.check(TokenKind::Import), "Expected 'import' token");
-	stream.advance(); // consume 'import'
-	
-	auto parse_import_item = [this]() -> ParseResult<ImportItem> {
-		auto start = stream.start();
-		auto name = CONSUME(Identifier);
-		return ImportItem{name.span};
-	};
-
-	ImportItemList items;
-	do {
-		auto item = PARSE_ATTEMPT(parse_import_item());
-		items.push_back(std::move(item));
-	} while (stream.match(Comma));
-	EXPECT(Semicolon);
-
-	return std::make_unique<ImportDecl>(
-		stream.span_from(start),
-		std::move(items)
-	);
-}
-
 Parser::ParseResult<DeclPtr> Parser::parse_fn_decl() {
 	constexpr auto ctx = Context::FnDecl;
 	auto start = stream.start();
@@ -184,5 +158,31 @@ Parser::ParseResult<DeclPtr> Parser::parse_namespace_decl() {
 		stream.span_from(start),
 		name.span,
 		std::move(decls)
+	);
+}
+
+Parser::ParseResult<DeclPtr> Parser::parse_import_decl() {
+	constexpr auto ctx = Context::ImportDecl;
+	auto start = stream.start();
+
+	ASSERT(stream.check(TokenKind::Import), "Expected 'import' token");
+	stream.advance(); // consume 'import'
+	
+	auto parse_import_item = [this]() -> ParseResult<ImportItem> {
+		auto start = stream.start();
+		auto name = CONSUME(Identifier);
+		return ImportItem{name.span};
+	};
+
+	ImportItemList items;
+	do {
+		auto item = PARSE_ATTEMPT(parse_import_item());
+		items.push_back(std::move(item));
+	} while (stream.match(Comma));
+	EXPECT(Semicolon);
+
+	return std::make_unique<ImportDecl>(
+		stream.span_from(start),
+		std::move(items)
 	);
 }

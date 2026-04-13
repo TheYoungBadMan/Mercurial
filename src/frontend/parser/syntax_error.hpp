@@ -5,6 +5,7 @@
 #include "frontend/source/span.hpp"
 
 using Mismatch = TokenKind;
+
 enum class Expected : u8 {
 	Expression,
 	Declaration,

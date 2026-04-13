@@ -5,6 +5,29 @@
 #include "core/contract.hpp"
 #include "frontend/ast/stmt.hpp"
 
+// ---------------------------- Internals ------------------------------- //
+
+namespace {
+	Option<AssignOp> to_assign_op(TokenKind kind) noexcept {
+		switch (kind) {
+			case TokenKind::Equal: return AssignOp::Assign;
+			case TokenKind::PlusEqual: return AssignOp::AddAssign;
+			case TokenKind::MinusEqual: return AssignOp::SubAssign;
+			case TokenKind::StarEqual: return AssignOp::MulAssign;
+			case TokenKind::SlashEqual: return AssignOp::DivAssign;
+			case TokenKind::PercentEqual: return AssignOp::ModAssign;
+			case TokenKind::AmpEqual: return AssignOp::AndAssign;
+			case TokenKind::BarEqual: return AssignOp::OrAssign;
+			case TokenKind::CaretEqual: return AssignOp::XorAssign;
+			case TokenKind::LessLessEqual: return AssignOp::ShlAssign;
+			case TokenKind::GreaterGreaterEqual: return AssignOp::ShrAssign;
+			default: return std::nullopt;
+		}
+	}
+}
+
+// ---------------------------- Parsing Statements ------------------------------- //
+
 Parser::ParseResult<StmtPtr> Parser::parse_stmt() {
 	if (stream.check(TokenKind::If))
 		return parse_if_stmt();
@@ -114,23 +137,6 @@ Parser::ParseResult<StmtPtr> Parser::parse_continue_stmt() {
 	EXPECT(Semicolon);
 
 	return std::make_unique<ContinueStmt>(stream.span_from(start));
-}
-
-static Option<AssignOp> to_assign_op(TokenKind kind) noexcept {
-	switch (kind) {
-		case TokenKind::Equal: return AssignOp::Assign;
-		case TokenKind::PlusEqual: return AssignOp::AddAssign;
-		case TokenKind::MinusEqual: return AssignOp::SubAssign;
-		case TokenKind::StarEqual: return AssignOp::MulAssign;
-		case TokenKind::SlashEqual: return AssignOp::DivAssign;
-		case TokenKind::PercentEqual: return AssignOp::ModAssign;
-		case TokenKind::AmpEqual: return AssignOp::BitAndAssign;
-		case TokenKind::BarEqual: return AssignOp::BitOrAssign;
-		case TokenKind::CaretEqual: return AssignOp::BitXorAssign;
-		case TokenKind::LessLessEqual: return AssignOp::ShlAssign;
-		case TokenKind::GreaterGreaterEqual: return AssignOp::ShrAssign;
-		default: return std::nullopt;
-	}
 }
 
 Parser::ParseResult<StmtPtr> Parser::parse_expr_stmt() {

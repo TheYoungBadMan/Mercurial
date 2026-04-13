@@ -3,57 +3,89 @@
 #include "parser.hpp"
 
 #include "frontend/ast/expr.hpp"
-	
+
+// --------------------- Internals -------------------------------- //
+
+namespace {
+
+	struct BinaryOpInfo {
+		BinaryOp op;
+		Int precedence;
+	};
+
+	Option<BinaryOpInfo> to_binary_op_info(TokenKind kind) noexcept {
+		switch (kind) {
+			case TokenKind::BarBar:
+				return BinaryOpInfo{BinaryOp::Or, 1}; // ||
+			case TokenKind::AmpAmp:
+				return BinaryOpInfo{BinaryOp::And, 2}; // &&
+			case TokenKind::EqualEqual:
+				return BinaryOpInfo{BinaryOp::Eq, 3}; // ==
+			case TokenKind::BangEqual:
+				return BinaryOpInfo{BinaryOp::Neq, 3}; // !=
+			case TokenKind::Less:
+				return BinaryOpInfo{BinaryOp::Lt, 4}; // <
+			case TokenKind::LessEqual:
+				return BinaryOpInfo{BinaryOp::Leq, 4}; // <=
+			case TokenKind::Greater:
+				return BinaryOpInfo{BinaryOp::Gt, 4}; // >
+			case TokenKind::GreaterEqual:
+				return BinaryOpInfo{BinaryOp::Geq, 4}; // >=
+			case TokenKind::Bar:
+				return BinaryOpInfo{BinaryOp::BitOr, 5}; // |
+			case TokenKind::Caret:
+				return BinaryOpInfo{BinaryOp::BitXor, 6}; // ^
+			case TokenKind::Amp:
+				return BinaryOpInfo{BinaryOp::BitAnd, 7}; // &
+			case TokenKind::LessLess:
+				return BinaryOpInfo{BinaryOp::Shl, 8}; // <<
+			case TokenKind::GreaterGreater:
+				return BinaryOpInfo{BinaryOp::Shr, 8}; // >>
+			case TokenKind::Plus:
+				return BinaryOpInfo{BinaryOp::Add, 9}; // +
+			case TokenKind::Minus:
+				return BinaryOpInfo{BinaryOp::Sub, 9}; // -
+			case TokenKind::Star:
+				return BinaryOpInfo{BinaryOp::Mul, 10}; // *
+			case TokenKind::Slash:
+				return BinaryOpInfo{BinaryOp::Div, 10}; // /
+			case TokenKind::Percent:
+				return BinaryOpInfo{BinaryOp::Mod, 10}; // %
+			default:
+				return std::nullopt; // not a binary operator
+		}
+	}
+
+	Option<UnaryOp> to_unary_op(TokenKind kind) noexcept {
+		switch (kind) {
+			case TokenKind::Plus: return UnaryOp::Pos; // +
+			case TokenKind::Minus: return UnaryOp::Neg; // -
+			case TokenKind::Bang: return UnaryOp::Not; // !
+			case TokenKind::Tilde: return UnaryOp::BitNot; // ~
+			default: return std::nullopt; // not a unary operator
+		}
+	}
+
+	Option<Literal> to_literal_kind(TokenKind kind) noexcept {
+		switch (kind) {
+			case TokenKind::Integer: return Literal::Integer;
+			case TokenKind::Float: return Literal::Float;
+			case TokenKind::Boolean: return Literal::Boolean;
+			case TokenKind::Character: return Literal::Character;
+			case TokenKind::String: return Literal::String;
+			case TokenKind::Pass: return Literal::Pass;
+			case TokenKind::Todo: return Literal::Todo;
+			case TokenKind::Default: return Literal::Default;
+			default: return std::nullopt; // not a literal
+		}
+	}
+
+} // namespace
+
+// --------------------- Parsing Expressions --------------------- //
+
 Parser::ParseResult<ExprPtr> Parser::parse_expr() {
 	return parse_binary_expr();
-}
-
-struct BinaryOpInfo {
-	BinaryOp op;
-	Int precedence;
-};
-
-static Option<BinaryOpInfo> to_binary_op_info(TokenKind kind) noexcept {
-	switch (kind) {
-		case TokenKind::BarBar:
-			return BinaryOpInfo{BinaryOp::Or, 1}; // ||
-		case TokenKind::AmpAmp:
-			return BinaryOpInfo{BinaryOp::And, 2}; // &&
-		case TokenKind::EqualEqual:
-			return BinaryOpInfo{BinaryOp::Eq, 3}; // ==
-		case TokenKind::BangEqual:
-			return BinaryOpInfo{BinaryOp::Neq, 3}; // !=
-		case TokenKind::Less:
-			return BinaryOpInfo{BinaryOp::Lt, 4}; // <
-		case TokenKind::LessEqual:
-			return BinaryOpInfo{BinaryOp::Leq, 4}; // <=
-		case TokenKind::Greater:
-			return BinaryOpInfo{BinaryOp::Gt, 4}; // >
-		case TokenKind::GreaterEqual:
-			return BinaryOpInfo{BinaryOp::Geq, 4}; // >=
-		case TokenKind::Bar:
-			return BinaryOpInfo{BinaryOp::BitOr, 5}; // |
-		case TokenKind::Caret:
-			return BinaryOpInfo{BinaryOp::BitXor, 6}; // ^
-		case TokenKind::Amp:
-			return BinaryOpInfo{BinaryOp::BitAnd, 7}; // &
-		case TokenKind::LessLess:
-			return BinaryOpInfo{BinaryOp::Shl, 8}; // <<
-		case TokenKind::GreaterGreater:
-			return BinaryOpInfo{BinaryOp::Shr, 8}; // >>
-		case TokenKind::Plus:
-			return BinaryOpInfo{BinaryOp::Add, 9}; // +
-		case TokenKind::Minus:
-			return BinaryOpInfo{BinaryOp::Sub, 9}; // -
-		case TokenKind::Star:
-			return BinaryOpInfo{BinaryOp::Mul, 10}; // *
-		case TokenKind::Slash:
-			return BinaryOpInfo{BinaryOp::Div, 10}; // /
-		case TokenKind::Percent:
-			return BinaryOpInfo{BinaryOp::Mod, 10}; // %
-		default:
-			return std::nullopt; // not a binary operator
-	}
 }
 
 Parser::ParseResult<ExprPtr> Parser::parse_binary_expr(Int min_precedence) {
@@ -80,18 +112,8 @@ Parser::ParseResult<ExprPtr> Parser::parse_binary_expr(Int min_precedence) {
 	return left;
 }
 
-static Option<UnaryOp> to_unary_op(TokenKind kind) noexcept {
-	switch (kind) {
-		case TokenKind::Plus: return UnaryOp::Pos; // +
-		case TokenKind::Minus: return UnaryOp::Neg; // -
-		case TokenKind::Bang: return UnaryOp::Not; // !
-		case TokenKind::Tilde: return UnaryOp::BitNot; // ~
-		default: return std::nullopt; // not a unary operator
-	}
-}
-
 Parser::ParseResult<ExprPtr> Parser::parse_unary_expr() {
-	if (auto op = to_unary_op(stream.peek().kind); op.has_value()) {
+	if (auto op = to_unary_op(stream.peek().kind); op) {
 		auto start = stream.start();
 		stream.advance(); // consume operator
 		auto operand = PARSE_ATTEMPT(parse_unary_expr());
@@ -156,33 +178,19 @@ Parser::ParseResult<ExprPtr> Parser::parse_postfix_expr() {
 	return expr;
 }
 
-static Option<Literal> to_literal_kind(TokenKind kind) noexcept {
-	switch (kind) {
-		case TokenKind::Integer: return Literal::Integer;
-		case TokenKind::Float: return Literal::Float;
-		case TokenKind::String: return Literal::String;
-		case TokenKind::Character: return Literal::Character;
-		case TokenKind::Boolean: return Literal::Boolean;
-		case TokenKind::Pass: return Literal::Pass;
-		case TokenKind::Todo: return Literal::Todo;
-		case TokenKind::Default: return Literal::Default;
-		default: return std::nullopt; // not a literal
-	}
-}
-
 Parser::ParseResult<ExprPtr> Parser::parse_primary_expr() {
 	constexpr auto ctx = Context::Expr;
 
-	if (stream.check(TokenKind::LeftParen))
-		return parse_paren_expr();
-	if (stream.check(TokenKind::LeftBracket))
-		return parse_array_expr();
 	if (stream.check(TokenKind::Fn))
 		return parse_lambda_expr();
+	if (stream.check(TokenKind::LeftBracket))
+		return parse_array_expr();
+	if (stream.check(TokenKind::LeftParen))
+		return parse_paren_expr();
 	if (stream.check(TokenKind::Identifier))
 		return parse_ident_expr();
 
-	if (auto literal_kind = to_literal_kind(stream.peek().kind); literal_kind.has_value()) {
+	if (auto literal_kind = to_literal_kind(stream.peek().kind); literal_kind) {
 		auto literal = stream.consume(); // consume literal
 		return std::make_unique<LitExpr>(
 			literal.span,
@@ -193,102 +201,6 @@ Parser::ParseResult<ExprPtr> Parser::parse_primary_expr() {
 	UNEXPECTED(Expected::Expression);
 }
 
-Parser::ParseResult<ExprPtr> Parser::parse_paren_expr() {
-	constexpr auto ctx = Context::ParenExpr;
-	auto start = stream.start();
-
-	ASSERT(stream.check(LeftParen), "Expected '(' token");
-	stream.advance(); // consume '('
-
-	if (stream.match(RightParen))
-		return std::make_unique<ParenExpr>(stream.span_from(start)); // unit literal `()`
-
-	auto first_expr = PARSE_ATTEMPT(parse_expr());
-
-	if (stream.match(RightParen))
-		return std::make_unique<ParenExpr>(
-			stream.span_from(start),
-			std::move(first_expr)
-		); // parenthesized expression
-
-	EXPECT(Comma);
-
-	ExprList elements = {std::move(first_expr)};
-
-	if (!stream.match(RightParen)) {
-		do {
-			auto element = PARSE_ATTEMPT(parse_expr());
-			elements.push_back(std::move(element));
-		} while (stream.match(Comma) && !stream.check(RightParen));
-		EXPECT(RightParen);
-	}
-
-	return std::make_unique<TupleExpr>(
-		stream.span_from(start),
-		std::move(elements)
-	); // tuple literal
-}
-
-Parser::ParseResult<ExprPtr> Parser::parse_array_expr() {
-	constexpr auto ctx = Context::ArrayExpr;
-	auto start = stream.start();
-
-	ASSERT(stream.check(TokenKind::LeftBracket), "Expected '[' token");
-	stream.advance(); // consume '['
-	
-	ExprList elements;
-	if (!stream.match(RightBracket)) {
-		do {
-			auto element = PARSE_ATTEMPT(parse_expr());
-			elements.push_back(std::move(element));
-		} while (stream.match(Comma) && !stream.check(RightBracket));
-		EXPECT(RightBracket);
-	}
-
-
-	return std::make_unique<ArrayExpr>(
-		stream.span_from(start),
-		std::move(elements)
-	);
-}
-
-Parser::ParseResult<ExprPtr> Parser::parse_ident_expr() {
-	auto start = stream.start();
-
-	ASSERT(stream.check(Identifier), "Expected identifier token");
-	auto name = stream.consume(); // consume identifier
-
-	if (!stream.match(LeftBrace))
-		return std::make_unique<IdentExpr>(name.span); // simple identifier
-
-	constexpr auto ctx = Context::RecordExpr;
-
-	auto parse_field_init = [this]() -> ParseResult<FieldInit> {
-			auto start = stream.start();
-			auto field_name = CONSUME(Identifier);
-			EXPECT(Equal);
-			auto field_value = PARSE_ATTEMPT(parse_expr());
-			return FieldInit{
-				.name = field_name.span,
-				.value = std::move(field_value),
-			};
-	};
-
-	Vector<FieldInit> field_inits;
-	if (!stream.match(RightBrace)) {
-		do {
-			auto field_init = PARSE_ATTEMPT(parse_field_init());
-			field_inits.push_back(std::move(field_init));
-		} while (stream.match(Comma) && !stream.check(RightBrace));
-		EXPECT(RightBrace);
-	}
-
-	return std::make_unique<RecordExpr>(
-		stream.span_from(start),
-		name.span,
-		std::move(field_inits)
-	); // record literal
-}
 
 Parser::ParseResult<ExprPtr> Parser::parse_lambda_expr() {
 	constexpr auto ctx = Context::LambdaExpr;
@@ -318,5 +230,100 @@ Parser::ParseResult<ExprPtr> Parser::parse_lambda_expr() {
 		std::move(params),
 		std::move(return_type),
 		std::move(body)
+	);
+}
+
+Parser::ParseResult<ExprPtr> Parser::parse_array_expr() {
+	constexpr auto ctx = Context::ArrayExpr;
+	auto start = stream.start();
+
+	ASSERT(stream.check(TokenKind::LeftBracket), "Expected '[' token");
+	stream.advance(); // consume '['
+	
+	ExprList elements;
+	if (!stream.match(RightBracket)) {
+		do {
+			auto element = PARSE_ATTEMPT(parse_expr());
+			elements.push_back(std::move(element));
+		} while (stream.match(Comma) && !stream.check(RightBracket));
+		EXPECT(RightBracket);
+	}
+
+	return std::make_unique<ArrayExpr>(
+		stream.span_from(start),
+		std::move(elements)
+	);
+}
+
+Parser::ParseResult<ExprPtr> Parser::parse_paren_expr() {
+	constexpr auto ctx = Context::ParenExpr;
+	auto start = stream.start();
+
+	ASSERT(stream.check(LeftParen), "Expected '(' token");
+	stream.advance(); // consume '('
+
+	if (stream.match(RightParen))
+		return std::make_unique<ParenExpr>(stream.span_from(start)); // unit literal `()`
+
+	auto first_expr = PARSE_ATTEMPT(parse_expr());
+
+	if (stream.match(RightParen))
+		return std::make_unique<ParenExpr>(
+			stream.span_from(start),
+			std::move(first_expr)
+		);
+
+	EXPECT(Comma);
+
+	ExprList elements = {std::move(first_expr)};
+	if (!stream.match(RightParen)) {
+		do {
+			auto element = PARSE_ATTEMPT(parse_expr());
+			elements.push_back(std::move(element));
+		} while (stream.match(Comma) && !stream.check(RightParen));
+		EXPECT(RightParen);
+	}
+
+	return std::make_unique<TupleExpr>(
+		stream.span_from(start),
+		std::move(elements)
+	);
+}
+
+Parser::ParseResult<ExprPtr> Parser::parse_ident_expr() {
+	auto start = stream.start();
+
+	ASSERT(stream.check(Identifier), "Expected identifier token");
+	auto name = stream.consume(); // consume identifier
+
+	if (!stream.match(LeftBrace))
+		return std::make_unique<IdentExpr>(name.span);
+
+	constexpr auto ctx = Context::RecordExpr;
+
+	auto parse_field_init = [this]() -> ParseResult<FieldInit> {
+			auto start = stream.start();
+			auto field_name = CONSUME(Identifier);
+			EXPECT(Equal);
+			auto field_value = PARSE_ATTEMPT(parse_expr());
+			return FieldInit{
+				.name = field_name.span,
+				.value = std::move(field_value),
+			};
+	};
+
+	FieldInitList field_inits;
+	if (!stream.match(RightBrace)) {
+		do {
+			auto field_init = PARSE_ATTEMPT(parse_field_init());
+			field_inits.push_back(std::move(field_init));
+		} while (stream.match(Comma) && !stream.check(RightBrace));
+		EXPECT(RightBrace);
+	}
+
+	return std::make_unique<RecordExpr>(
+		stream.span_from(start),
+		name.span,
+		std::move(field_inits)
 	);
 }

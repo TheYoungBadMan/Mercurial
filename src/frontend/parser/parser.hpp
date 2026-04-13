@@ -43,10 +43,6 @@
 		stream.prev(); \
 	})
 
-struct ParserResult {
-	// CURRENTLY UNUSED
-};
-
 class Parser {
 public:
 
@@ -66,8 +62,6 @@ private:
 	explicit Parser(const Vector<Token>& tokens) noexcept
 		: stream{tokens} {}
 
-	// -------------------- RESULT --------------------- //
-
 	// -------------------- PARSING FUNCTIONS -------------------- //
 
 	using enum TokenKind;
@@ -80,15 +74,14 @@ private:
 			decls.push_back(std::move(decl));
 		}
 
-		return decls;
+		return Module{std::move(decls)};
 	}
 
 	ParseResult<BlockPtr> parse_block(Context ctx) {
 		auto start = stream.start();
 
 		EXPECT(LeftBrace);
-
-		Vector<BlockItem> items;
+		BlockItemList items;
 		while (!stream.check(RightBrace) && !stream.eof()) {
 			if (stream.check(Var)) {
 				auto decl = PARSE_ATTEMPT(parse_var_decl());
@@ -101,7 +94,6 @@ private:
 				items.push_back(std::move(stmt));
 			}
 		}
-
 		EXPECT(RightBrace);
 
 		return std::make_unique<Block>(stream.span_from(start), std::move(items));
@@ -129,24 +121,13 @@ private:
 
 	// -------------------- Node parsing --------------------- //
 
-	ParseResult<PatternPtr> parse_pattern();
-	ParseResult<PatternPtr> parse_paren_pattern();
-	ParseResult<PatternPtr> parse_named_pattern();
-
-	ParseResult<TypePtr> parse_type();
-	ParseResult<TypePtr> parse_postfix_type();
-	ParseResult<TypePtr> parse_primary_type();
-	ParseResult<TypePtr> parse_paren_type();
-	ParseResult<TypePtr> parse_function_type();
-	ParseResult<TypePtr> parse_named_type();
-
 	ParseResult<DeclPtr> parse_decl();
 	ParseResult<DeclPtr> parse_var_decl();
 	ParseResult<DeclPtr> parse_alias_decl();
-	ParseResult<DeclPtr> parse_import_decl();
 	ParseResult<DeclPtr> parse_fn_decl();
 	ParseResult<DeclPtr> parse_record_decl();
 	ParseResult<DeclPtr> parse_namespace_decl();
+	ParseResult<DeclPtr> parse_import_decl();
 
 	ParseResult<StmtPtr> parse_stmt();
 	ParseResult<StmtPtr> parse_if_stmt();
@@ -162,8 +143,20 @@ private:
 	ParseResult<ExprPtr> parse_unary_expr();
 	ParseResult<ExprPtr> parse_postfix_expr();
 	ParseResult<ExprPtr> parse_primary_expr();
-	ParseResult<ExprPtr> parse_paren_expr();
-	ParseResult<ExprPtr> parse_array_expr();
 	ParseResult<ExprPtr> parse_lambda_expr();
+	ParseResult<ExprPtr> parse_array_expr();
+	ParseResult<ExprPtr> parse_paren_expr();
 	ParseResult<ExprPtr> parse_ident_expr();
+
+	ParseResult<TypePtr> parse_type();
+	ParseResult<TypePtr> parse_postfix_type();
+	ParseResult<TypePtr> parse_primary_type();
+	ParseResult<TypePtr> parse_function_type();
+	ParseResult<TypePtr> parse_paren_type();
+	ParseResult<TypePtr> parse_named_type();
+
+	ParseResult<PatternPtr> parse_pattern();
+	ParseResult<PatternPtr> parse_paren_pattern();
+	ParseResult<PatternPtr> parse_named_pattern();
+
 };
